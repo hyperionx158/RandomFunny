@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Portal - Integrated with Cloudflare Workers</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .endpoint { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 5px; margin: 10px 0; }
+    .status { color: green; font-weight: bold; }
+    .error { color: red; font-weight: bold; }
+    #balance { font-size: 24px; font-weight: bold; margin: 10px 0; }
+    .achievement-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 8px; }
+    .card { padding: 15px; margin: 10px 0; border-radius: 8px; background: #fafafa; }
+  </style>
+</head>
+<body>
+  <h1>🎮 Dev Portal Site</h1>
+
+  <!-- Balance Display -->
+  <div>
+    <strong>Balance: <span id="balance">Loading...</span> coins</strong>
+  </div>
+
+  <!-- Achievements Section -->
+  <h2>🏆 Achievements</h2>
+  <div id="achievements" style="display: none;">
+    <!-- Achievements will be injected here -->
+  </div>
+
+  <!-- Activity Form -->
+  <h3>📊 Track Activity</h3>
+  <input type="text" id="activityInput" placeholder="Enter activity (e.g., login, purchase)">
+  <button onclick="trackActivity()">Track Activity</button>
+
+  <!-- Shop - Award Money -->
+  <h3>💰 Award Money</h3>
+  <input type="number" id="awardAmount" placeholder="Amount (coins)">
+  <button onclick="awardMoney()">Award Money</button>
+
+  <!-- MinIO File Browser Section -->
+  <h3>📁 MinIO File Storage</h3>
+  <div id="minioStatus" style="margin: 10px 0; padding: 10px; background: #e8f4fd; border-radius: 5px; display: none;">
+    <strong>MinIO Status: <span id="minioStatusText">Connecting...</span></strong>
+  </div>
+  <div id="minioBuckets" style="margin: 10px 0; display: none;">
+    <strong>Buckets:</strong>
+    <select id="minioBucketSelect" onchange="listMinioObjects()" style="margin: 5px 0; padding: 5px;">
+      <option value="">Select a bucket</option>
+    </select>
+  </div>
+  <div id="minioObjects" style="margin: 10px 0; display: none;">
+    <strong>Objects:</strong>
+    <select id="minioObjectSelect" style="width: 100%; margin: 5px 0; padding: 5px;"></select>
+    <button onclick="downloadMinioObject()" style="float: right; margin: 5px 0; padding: 5px;">Download Selected</button>
+  </div>
+
+  <!-- Firebase Config Section -->
+  <h3>⚙️ Firebase Configuration</h3>
+  <button onclick="fetchFirebaseConfig()">Fetch Firebase Config</button>
+
+  <!-- JavaScript Integration -->
+  <script>
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+
+    const ACTIVITY_WORKER = 'https://activity-tracker.mepro1212e.workers.dev';
+    const FIREBASE_WORKER = 'https://firebase-config-worker.mepro1212e.workers.dev';
+    const MINIO_URL = 'http://freely-rising-enemies-clock.trycloudflare.com';
+    const MINIO_ACCESS_KEY = 'admin';
+    const MINIO_SECRET_KEY = 'MySecretGamePass123';
+    const USERNAME = 'lol8'; // Replace with your username system
+
+    // ==========================================
+    // BALANCE SYSTEM
+    // ==========================================
+
+    async function fetchBalance() {
+      try {
+        const response = await fetch(`${ACTIVITY_WORKER}/user-balance/${USERNAME}`);
+        const data = await response.json();
+        document.getElementById('balance').innerText = data.balance || 0;
+      } catch (error) {
+        document.getElementById('balance').innerText = 'Error';
+        console.error(error);
+      }
+    }
+
+    // ==========================================
+    // ACTIVITY TRACKING
+    // ==========================================
+
+    async function trackActivity() {
+      const activity = document.getElementById('activityInput').value || 'login';
+      try {
+        const response = await fetch(`${ACTIVITY_WORKER}/track-activity`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: USERNAME,
+            activity: activity,
+            details: { page: window.location.pathname, timestamp: new Date().toISOString() }
+          })
+        });
+        const result = await response.json();
+        console.log('Activity tracked:', result);
+        alert('Activity tracked successfully!');
+        document.getElementById('activityInput').value = '';
+        await fetchBalance();
+      } catch (error) {
+        console.error('Error tracking activity:', error);
+        alert('Failed to track activity');
+      }
+    }
+
+    // ==========================================
+    // MONEY/ECONOMY SYSTEM
+    // ==========================================
+
+    async function awardMoney() {
+      const amount = document.getElementById('awardAmount').value;
+      if (!amount || isNaN(amount) || amount <= 0) {
+        alert('Please enter a valid amount');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: USERNAME,
+            achievementId: `reward_${amount}`,
+            details: { source: 'site_activity', amount }
+          })
+        });
+        const result = await response.json();
+        alert(`💰 Awarded ${amount} coins! New balance: ${result.balance}`);
+        await fetchBalance();
+      } catch (error) {
+        console.error('Error awarding money:', error);
+        alert('Failed to award money');
+      }
+    }
+
+    // ==========================================
+    // ACHIEVEMENTS SYSTEM
+    // ==========================================
+
+    async function loadAchievements() {
+      try {
+        const response = await fetch(`${ACTIVITY_WORKER}/user-achievements/${USERNAME}`);
+        const data = await response.json();
+
+        const container = document.getElementById('achievements');
+        if (data.achievements.length === 0) {
+          container.innerHTML = '<p>No achievements yet. Complete activities to earn!</p>';
+          container.style.display = 'block';
+          return;
+        }
+
+        container.innerHTML = data.achievements.map(ach => `
+          <div class="achievement-card">
+            <h4>${ach.title}</h4>
+            <p>${ach.description}</p>
+            <p><strong>Reward:</strong> ${ach.reward}</p>
+            <p><strong>Status:</strong> ${ach.completed ? '✅ Unlocked' : '🔒 Locked'}</p>
+          </div>
+        `).join('');
+        container.style.display = 'block';
+      } catch (error) {
+        console.error('Error loading achievements:', error);
+      }
+    }
+
+    // Unlock achievement (demo)
+    async function unlockAchievement(achId) {
+      try {
+        const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: USERNAME,
+            achievementId: achId
+          })
+        });
+        const result = await response.json();
+        alert(`🏆 ${result.title || 'Achievement'} unlocked! +${result.reward} coins`);
+        await loadAchievements();
+      } catch (error) {
+        console.error('Error unlocking achievement:', error);
+      }
+    }
+
+    // Check progress toward achievement
+    async function checkProgress(achievementId) {
+      try {
+        const response = await fetch(`${ACTIVITY_WORKER}/check-progress`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: USERNAME,
+            achievementId: achievementId
+          })
+        });
+        const result = await response.json();
+        console.log('Progress:', result);
+        alert(`Progress: ${result.unlocked ? 'Completed!' : `${result.progress}% complete`}`);
+      } catch (error) {
+        console.error('Error checking progress:', error);
+      }
+    }
+
+    // ==========================================
+    // FIREBASE CONFIG
+    // ==========================================
+
+    async function fetchFirebaseConfig() {
+      try {
+        const response = await fetch(`${FIREBASE_WORKER}/firebase-config`);
+        const config = await response.json();
+        console.log('Firebase Config:', config);
+        // Initialize Firebase with config
+        // window.firebase.initializeApp(config);
+        return config;
+      } catch (error) {
+        console.error('Error fetching Firebase config:', error);
+        return null;
+      }
+    }
+
+    // ==========================================
+    // MINIO FILE STORAGE
+    // ==========================================
+
+    function getMinioAuthHeader() {
+      return { 'Authorization': 'Basic ' + btoa(`${MINIO_ACCESS_KEY}:${MINIO_SECRET_KEY}`) };
+    }
+
+    async function listMinioBuckets() {
+      try {
+        const response = await fetch(`${MINIO_URL}/minio`, {
+          method: 'GET',
+          headers: getMinioAuthHeader()
+        });
+        const data = await response.json();
+        const bucketSelect = document.getElementById('minioBucketSelect');
+        bucketSelect.innerHTML = '<option value="">Select a bucket</option>';
+        if (data.buckets) {
+          data.buckets.forEach(bucket => {
+            const option = document.createElement('option');
+            option.value = bucket.name;
+            option.textContent = bucket.name;
+            bucketSelect.appendChild(option);
+          });
+        }
+        document.getElementById('minioBuckets').style.display = 'block';
+        document.getElementById('minioStatusText').innerText = 'Connected';
+        document.getElementById('minioStatus').style.display = 'block';
+      } catch (error) {
+        console.error('Error listing MinIO buckets:', error);
+        document.getElementById('minioStatusText').innerText = 'Error connecting to MinIO';
+        document.getElementById('minioStatus').style.display = 'block';
+      }
+    }
+
+    async function listMinioObjects() {
+      const bucketSelect = document.getElementById('minioBucketSelect');
+      const selectedBucket = bucketSelect.value;
+      if (!selectedBucket) {
+        alert('Please select a bucket first');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${MINIO_URL}/minio/${selectedBucket}`, {
+          method: 'GET',
+          headers: getMinioAuthHeader()
+        });
+        const data = await response.json();
+        const objectSelect = document.getElementById('minioObjectSelect');
+        objectSelect.innerHTML = '<option value="">Select an object</option>';
+        if (data.objects) {
+          data.objects.forEach(obj => {
+            const option = document.createElement('option');
+            option.value = obj.key;
+            option.textContent = obj.key;
+            objectSelect.appendChild(option);
+          });
+        } else if (data.length > 0) {
+          data.forEach(obj => {
+            const option = document.createElement('option');
+            option.value = obj.key;
+            option.textContent = obj.key;
+            objectSelect.appendChild(option);
+          });
+        }
+        document.getElementById('minioObjects').style.display = 'block';
+      } catch (error) {
+        console.error('Error listing MinIO objects:', error);
+      }
+    }
+
+    async function downloadMinioObject() {
+      const objectSelect = document.getElementById('minioObjectSelect');
+      const selectedKey = objectSelect.value;
+      if (!selectedKey) {
+        alert('Please select an object first');
+        return;
+      }
+
+      const bucketSelect = document.getElementById('minioBucketSelect');
+      const selectedBucket = bucketSelect.value;
+
+      try {
+        const response = await fetch(`${MINIO_URL}/minio/${selectedBucket}/${encodeURIComponent(selectedKey)}`, {
+          method: 'GET',
+          headers: getMinioAuthHeader()
+        });
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = selectedKey;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Error downloading MinIO object:', error);
+        alert('Failed to download object');
+      }
+    }
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+
+    // Load data on page init
+    await fetchBalance();
+    await loadAchievements();
+    await listMinioBuckets();
+
+    // Setup event listeners
+    document.getElementById('activityInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') trackActivity();
+    });
+
+    document.getElementById('awardAmount').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') awardMoney();
+    });
+  </script>
+
+  <!-- Footer -->
+  <footer style="margin-top: 40px; padding: 20px; border-top: 1px solid #ddd;">
+    <p>Dev Portal Integrated with Cloudflare Workers ✅</p>
+    <p>Activity Tracker: <a href="https://activity-tracker.mepro1212e.workers.dev" target="_blank">Live Worker</a></p>
+    <p>Firebase Config: <a href="https://firebase-config-worker.mepro1212e.workers.dev" target="_blank">Live Worker</a></p>
+  </footer>
+</body>
+</html>
