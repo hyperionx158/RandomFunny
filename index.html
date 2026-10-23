@@ -20,6 +20,9 @@
     .game-info p { color: #64748b; font-size: 0.9rem; margin-bottom: 0.5rem; }
     .game-tag { background: #3b82f6; color: white; padding: 3px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: bold; margin-top: 0.5rem; }
     .no-games { text-align: center; padding: 4rem; color: #64748b; }
+    .status { padding: 1rem; border-radius: 8px; margin: 2rem 0; }
+    .status.connected { background: #14532d; color: #d1e7dd; }
+    .status.error { background: #7f1d1d; color: #fecaca; }
   </style>
 </head>
 <body>
@@ -28,39 +31,66 @@
       <h1>🎮 Game Site</h1>
       <p>Play HTML5 games from your MinIO cloud</p>
     </div>
+    <div class="status" id="status" class="error">Connecting to MinIO...</div>
     <div class="games" id="games">
       <!-- Games loaded by JavaScript -->
     </div>
   </div>
   <script>
-    const MINIO_URL = 'http://freely-rising-enemies-clock.trycloudflare.com';
+    const MINIO_URL = 'http://freely-rising-enemies-clock.trycloudflare.com'; // CHANGE THIS to your current tunnel URL
     const ACCESS_KEY = 'admin';
     const SECRET_KEY = 'MySecretGamePass123';
+    let tunnelRunning = false;
+    
     async function loadGames() {
       const gamesDiv = document.getElementById('games');
-      gamesDiv.innerHTML = '<div class="no-games">Loading games...</div>';
+      const status = document.getElementById('status');
+      
+      status.textContent = 'Connecting to MinIO...';
+      status.className = 'status error';
+      
       try {
         const authHeader = 'Basic ' + btoa(`${ACCESS_KEY}:${SECRET_KEY}`);
-        const response = await fetch(`${MINIO_URL}/minio`, { headers: { 'Authorization': authHeader } });
-        const data = await response.json();
-        const games = data.objects || data || [];
-        if (games.length === 0) {
-          gamesDiv.innerHTML = '<div class="no-games">No games found in bucket</div>';
-          return;
+        const response = await fetch(`${MINIO_URL}/minio`, { headers: { 'Authorization': authHeader }, timeout: 8000 });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const games = data.objects || data || [];
+          
+          status.textContent = 'MinIO Connected';
+          status.className = 'status connected';
+          
+          if (games.length === 0) {
+            gamesDiv.innerHTML = '<div class="no-games">No games found in bucket</div>';
+            return;
+          }
+          
+          let html = '';
+          games.forEach((game, i) => {
+            const filename = game.key || game.name || `game-${i}`;
+            const name = filename.replace(/\.(html?|zip)$/i, '').replace(/-/g, ' ').replace(/_/g, ' ');
+            html += `<div class="game-card"><div class="game-image">${filename.slice(0, 3)}...</div><div class="game-info"><h3>${name}</h3><p>${filename}</p><span class="game-tag">MinIO</span></div></div>`;
+          });
+          gamesDiv.innerHTML = html;
+        } else {
+          throw new Error(`MinIO returned ${response.status}`);
         }
-        let html = '';
-        games.forEach((game, i) => {
-          const filename = game.key || game.name || `game-${i}`;
-          const name = filename.replace(/\.(html?|zip)$/i, '').replace(/-/g, ' ').replace(/_/g, ' ');
-          html += `<div class="game-card"><div class="game-image">${filename.slice(0, 3)}...</div><div class="game-info"><h3>${name}</h3><p>${filename}</p><span class="game-tag">MinIO</span></div></div>`;
-        });
-        gamesDiv.innerHTML = html;
       } catch (error) {
         console.error('Error loading games:', error);
-        gamesDiv.innerHTML = '<div class="no-games">Could not connect to MinIO. Check Cloudflare Tunnel.</div>';
+        status.textContent = 'MinIO Connection Failed';
+        status.className = 'status error';
+        gamesDiv.innerHTML = '<div class="no-games">Could not connect to MinIO.<br/>• Check Cloudflare Tunnel is running<br/>• Verify the tunnel URL is correct</div>';
       }
     }
+    
     document.addEventListener('DOMContentLoaded', loadGames);
+    
+    // Periodic retry
+    setInterval(() => {
+      if (document.getElementById('status').className !== 'status connected') {
+        loadGames();
+      }
+    }, 15000);
   </script>
 </body>
 </html>
