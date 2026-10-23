@@ -3,277 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RandomFunny — Game Library</title>
-  <meta name="description" content="Play the RandomFunny game library, streamed from MinIO.">
+  <title>GameHub</title>
+  <meta name="description" content="GameHub — games streamed from private cloud storage.">
   <style>
-    :root {
-      --bg: #0b1020;
-      --panel: #151c31;
-      --panel-2: #1c2540;
-      --line: #2a3556;
-      --text: #e7ecf7;
-      --muted: #8b96b3;
-      --accent: #6d8cff;
-      --accent-2: #23d5ab;
-    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background:
-        radial-gradient(900px 500px at 15% -10%, #1b2a5e55, transparent 60%),
-        radial-gradient(700px 400px at 90% 0%, #0e5a4d44, transparent 60%),
-        var(--bg);
-      color: var(--text);
-      min-height: 100%;
+    html, body { height: 100%; background: #0b1020; overflow: hidden; }
+    iframe {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      border: 0; background: #0b1020; opacity: 0;
+      transition: opacity 0.35s ease;
     }
-    .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 20px 64px; }
-
-    header { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 18px 0 26px; }
-    .brand { display: flex; align-items: center; gap: 14px; margin-right: auto; }
-    .logo {
-      width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: #08101f; font-size: 22px; font-weight: 800;
-      box-shadow: 0 8px 24px #6d8cff33;
+    iframe.ready { opacity: 1; }
+    #loading {
+      position: fixed; inset: 0; display: grid; place-items: center; gap: 16px;
+      background: radial-gradient(800px 400px at 50% 35%, #1b2a5e55, transparent 70%), #0b1020;
+      color: #e7ecf7; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center; transition: opacity 0.35s ease; z-index: 2;
     }
-    .brand h1 { font-size: 1.45rem; letter-spacing: -0.02em; }
-    .brand p { color: var(--muted); font-size: 0.82rem; margin-top: 2px; }
-
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      border: 1px solid var(--line); background: var(--panel); color: var(--text);
-      padding: 10px 16px; border-radius: 10px; font: inherit; font-size: 0.88rem;
-      cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-      transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 42px; height: 42px; border-radius: 50%;
+      border: 3px solid #2a3556; border-top-color: #6d8cff;
+      animation: spin 0.9s linear infinite; margin: 0 auto 14px;
     }
-    .btn:hover { background: var(--panel-2); border-color: #3b4a78; transform: translateY(-1px); }
-    .btn.primary { background: linear-gradient(135deg, var(--accent), #8a6dff); border-color: transparent; color: #fff; }
-    .btn.primary:hover { filter: brightness(1.08); }
-
-    .status {
-      display: inline-flex; align-items: center; gap: 8px;
-      color: var(--muted); font-size: 0.85rem; margin: 6px 0 22px;
-    }
-    .dot { width: 9px; height: 9px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 4px #f59e0b22; }
-    .dot.ok { background: var(--accent-2); box-shadow: 0 0 0 4px #23d5ab22; }
-    .dot.bad { background: #ef4444; box-shadow: 0 0 0 4px #ef444422; }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
-
-    .card {
-      position: relative; text-align: left; border: 1px solid var(--line);
-      background: linear-gradient(180deg, var(--panel), var(--panel-2));
-      border-radius: 14px; padding: 18px; cursor: pointer; overflow: hidden;
-      transition: transform 0.16s, border-color 0.16s, box-shadow 0.16s;
-      color: inherit; font: inherit;
-    }
-    .card::after {
-      content: ""; position: absolute; inset: 0;
-      background: radial-gradient(240px 120px at 100% 0%, #6d8cff1f, transparent 70%);
-      pointer-events: none;
-    }
-    .card:hover { transform: translateY(-3px); border-color: #41538a; box-shadow: 0 14px 30px #00000055; }
-    .thumb {
-      height: 92px; border-radius: 10px; margin-bottom: 14px; display: grid; place-items: center;
-      font-size: 1.9rem; font-weight: 800; color: #0b1020; letter-spacing: -0.03em;
-      background: linear-gradient(135deg, hsl(var(--h) 80% 68%), hsl(calc(var(--h) + 45) 80% 60%));
-    }
-    .card h3 { font-size: 1rem; letter-spacing: -0.01em; margin-bottom: 4px; }
-    .card small { color: var(--muted); font-size: 0.76rem; word-break: break-all; }
-    .play {
-      margin-top: 12px; display: inline-flex; align-items: center; gap: 6px;
-      font-size: 0.78rem; font-weight: 600; color: var(--accent);
-    }
-
-    .skeleton {
-      height: 186px; border-radius: 14px; border: 1px solid var(--line);
-      background: linear-gradient(100deg, #151c31 30%, #1e2844 50%, #151c31 70%);
-      background-size: 200% 100%; animation: shimmer 1.2s infinite;
-    }
-    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
-
-    .empty {
-      border: 1px dashed var(--line); border-radius: 14px; padding: 48px 24px;
-      text-align: center; color: var(--muted); grid-column: 1 / -1;
-    }
-    .empty strong { color: var(--text); display: block; margin-bottom: 8px; }
-
-    footer { margin-top: 44px; color: #5c6788; font-size: 0.78rem; text-align: center; }
-
-    /* Player overlay */
-    .player {
-      position: fixed; inset: 0; display: none; z-index: 50;
-      background: #05080f;
-    }
-    .player.open { display: flex; flex-direction: column; }
-    .player-bar {
-      display: flex; align-items: center; gap: 12px; padding: 10px 14px;
-      background: #0b1020; border-bottom: 1px solid var(--line);
-    }
-    .player-bar h2 { font-size: 0.95rem; margin-right: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player iframe { flex: 1; width: 100%; border: 0; background: #000; }
-    .icon-btn {
-      border: 1px solid var(--line); background: var(--panel); color: var(--text);
-      width: 36px; height: 36px; border-radius: 9px; cursor: pointer; font-size: 1rem;
-      display: grid; place-items: center;
-    }
-    .icon-btn:hover { background: var(--panel-2); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .title { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+    .sub { color: #8b96b3; font-size: 0.82rem; margin-top: 6px; }
+    #fallback { display: none; margin-top: 18px; }
+    #fallback a { color: #8fa8ff; font-size: 0.85rem; text-decoration: none; }
+    #fallback a:hover { text-decoration: underline; }
+    #fallback.show { display: block; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="logo">R</div>
-        <div>
-          <h1>RandomFunny</h1>
-          <p>Game library · streamed from cloud storage</p>
-        </div>
-      </div>
-      <div class="actions">
-        <button class="btn" id="refreshBtn" type="button">↻ Refresh</button>
-        <a class="btn primary" id="portalLink" href="#" target="_blank" rel="noopener">Open Full Portal</a>
-      </div>
-    </header>
+  <iframe
+    id="hub"
+    src="https://assets.hyperionx175.com/storage/RandomFunny/pages/index.html"
+    title="GameHub"
+    allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write"
+    allowfullscreen
+    referrerpolicy="no-referrer"
+  ></iframe>
 
-    <div class="status" id="status"><span class="dot" id="dot"></span><span id="statusText">Loading library…</span></div>
-
-    <main class="grid" id="grid" aria-live="polite"></main>
-
-    <footer>Games are served from private cloud storage. Nothing is stored in this repository.</footer>
-  </div>
-
-  <div class="player" id="player" role="dialog" aria-modal="true" aria-label="Game player">
-    <div class="player-bar">
-      <h2 id="playerTitle">Game</h2>
-      <a class="btn" id="openTab" href="#" target="_blank" rel="noopener">Open in new tab</a>
-      <button class="icon-btn" id="closePlayer" type="button" aria-label="Close player">✕</button>
+  <div id="loading">
+    <div>
+      <div class="spinner"></div>
+      <div class="title">Loading GameHub</div>
+      <div class="sub">Connecting to cloud storage…</div>
+      <div id="fallback"><a id="directLink" href="#" target="_blank" rel="noopener">Taking too long? Open directly</a></div>
     </div>
-    <iframe id="frame" title="Game" allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write" allowfullscreen></iframe>
   </div>
 
   <script>
-    const BASE = 'https://assets.hyperionx175.com/storage/RandomFunny';
-    const LIST_URL = 'https://assets.hyperionx175.com/storage?list-type=2&prefix=RandomFunny/games/html5/&max-keys=1000';
-    const GAMES_PREFIX = `${BASE}/games/html5/`;
+    const HUB_URL = 'https://assets.hyperionx175.com/storage/RandomFunny/pages/index.html';
+    const frame = document.getElementById('hub');
+    const loading = document.getElementById('loading');
+    const fallback = document.getElementById('fallback');
+    document.getElementById('directLink').href = HUB_URL;
 
-    // Shown when the listing request is unavailable (offline / blocked / CORS).
-    const FALLBACK = [
-      'UCN.html', 'adofai.html', 'cookieclicker.html', 'crazycattle3d.html',
-      'eaglercraft.html', 'getaway-shootout.html', 'jetpackjoyride.html',
-      'ovo.html', 'retrobowl.html'
-    ];
-
-    const ACRONYMS = { ucn: 'UCN', adofai: 'A Dance of Fire and Ice', ovo: 'OvO' };
-
-    const grid = document.getElementById('grid');
-    const dot = document.getElementById('dot');
-    const statusText = document.getElementById('statusText');
-    const statusEl = document.getElementById('status');
-    const player = document.getElementById('player');
-    const frame = document.getElementById('frame');
-    const playerTitle = document.getElementById('playerTitle');
-    const openTab = document.getElementById('openTab');
-    const portalLink = document.getElementById('portalLink');
-
-    portalLink.href = `${BASE}/pages/index.html`;
-
-    function prettyName(file) {
-      const raw = file.replace(/\.html?$/i, '');
-      const key = raw.toLowerCase();
-      if (ACRONYMS[key]) return ACRONYMS[key];
-      return raw
-        .replace(/[-_]+/g, ' ')
-        .replace(/\b\w/g, c => c.toUpperCase());
+    let revealed = false;
+    function reveal() {
+      if (revealed) return;
+      revealed = true;
+      frame.classList.add('ready');
+      loading.classList.add('hidden');
     }
 
-    function hueFor(name) {
-      let h = 0;
-      for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
-      return h;
-    }
-
-    function gameUrl(file) {
-      return GAMES_PREFIX + encodeURIComponent(file);
-    }
-
-    function render(files, source) {
-      grid.innerHTML = '';
-      if (!files.length) {
-        grid.innerHTML = '<div class="empty"><strong>No games found</strong>The library is empty or the storage listing was blocked.</div>';
-        return;
-      }
-      const frag = document.createDocumentFragment();
-      files.forEach((file, i) => {
-        const name = prettyName(file);
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'card';
-        card.style.setProperty('--h', hueFor(name));
-        card.style.animationDelay = `${i * 30}ms`;
-        card.innerHTML = `
-          <div class="thumb">${name.slice(0, 2).toUpperCase()}</div>
-          <h3></h3>
-          <small></small>
-          <span class="play">▶ Play now</span>
-        `;
-        card.querySelector('h3').textContent = name;
-        card.querySelector('small').textContent = file;
-        card.addEventListener('click', () => openGame(file, name));
-        frag.appendChild(card);
-      });
-      grid.appendChild(frag);
-      statusText.textContent = `${files.length} games · ${source === 'live' ? 'synced with storage' : 'offline list'}`;
-      dot.className = `dot ${source === 'live' ? 'ok' : ''}`;
-    }
-
-    function openGame(file, name) {
-      const url = gameUrl(file);
-      playerTitle.textContent = name;
-      openTab.href = url;
-      frame.src = url;
-      player.classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeGame() {
-      player.classList.remove('open');
-      frame.src = 'about:blank';
-      document.body.style.overflow = '';
-    }
-
-    document.getElementById('closePlayer').addEventListener('click', closeGame);
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && player.classList.contains('open')) closeGame(); });
-    document.getElementById('refreshBtn').addEventListener('click', load);
-
-    async function load() {
-      grid.innerHTML = Array.from({ length: 8 }, () => '<div class="skeleton"></div>').join('');
-      statusText.textContent = 'Contacting storage…';
-      dot.className = 'dot';
-
-      try {
-        const res = await fetch(LIST_URL, { cache: 'no-store' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const xml = await res.text();
-        const doc = new DOMParser().parseFromString(xml, 'application/xml');
-        if (doc.querySelector('parsererror')) throw new Error('Invalid response');
-        const files = [...doc.querySelectorAll('Contents > Key')]
-          .map(n => n.textContent.split('/').pop())
-          .filter(f => /\.html?$/i.test(f))
-          .sort((a, b) => prettyName(a).localeCompare(prettyName(b)));
-        if (!files.length) throw new Error('No games listed');
-        render(files, 'live');
-      } catch (err) {
-        console.warn('[library] live listing failed:', err.message);
-        const files = [...FALLBACK].sort((a, b) => prettyName(a).localeCompare(prettyName(b)));
-        render(files, 'offline');
-        dot.className = 'dot bad';
-        statusText.textContent = `${files.length} games · storage unreachable, using offline list`;
-      }
-    }
-
-    load();
+    frame.addEventListener('load', reveal);
+    setTimeout(reveal, 6000);
+    setTimeout(() => fallback.classList.add('show'), 10000);
   </script>
 </body>
 </html>
