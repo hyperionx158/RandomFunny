@@ -7,32 +7,185 @@
     <link rel="stylesheet" href="https://assets.hyperionx175.com/storage/RandomFunny/assets/css/Main.css">
     <link rel="stylesheet" href="https://assets.hyperionx175.com/storage/RandomFunny/assets/css/economy.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/Main.js" defer></script>
-    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/settings.js"></script>
-    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/live-user-tracker.js"></script>
     <style>
-        .economy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        .economy-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); margin-bottom: 1rem; }
-        .balance-display { font-size: 2rem; font-weight: 700; color: var(--accent2); margin: 1rem 0; }
-        .achievement-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.5rem 0; }
-        .achievement-card.unlocked { border-color: var(--accent2); }
-        .shop-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.5rem 0; display: flex; justify-content: space-between; align-items: center; }
-        .shop-item:hover { border-color: var(--accent); }
-        .shop-item-info h4 { color: var(--text); margin: 0 0 0.25rem; }
-        .shop-item-info p { color: var(--muted); font-size: 0.85rem; margin: 0; }
-        .shop-item-price { color: var(--accent2); font-weight: 700; font-size: 1.1rem; }
+        /* Topbar Profile Dropdown */
+        .topbar { position: relative; }
+        .topbar-right { display: flex; align-items: center; gap: 1rem; }
+        .topbar-profile { 
+            display: flex; align-items: center; gap: 0.5rem; 
+            padding: 0.5rem 1rem; background: var(--panel); 
+            border: 1px solid var(--line); border-radius: 10px; 
+            cursor: pointer; transition: all 0.15s; position: relative; 
+        }
+        .topbar-profile:hover { background: var(--panel-2); border-color: var(--accent); }
+        .topbar-avatar { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; color: #08101f; font-weight: 700; font-size: 0.85rem; overflow: hidden; }
+        .topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .topbar-username { color: var(--text); font-weight: 600; font-size: 0.85rem; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .profile-dropdown { 
+            position: absolute; top: calc(100% + 8px); right: 0; 
+            background: var(--panel); border: 1px solid var(--line); 
+            border-radius: 12px; min-width: 240px; box-shadow: 0 8px 30px #00000055; 
+            z-index: 100; overflow: hidden; 
+        }
+        .dropdown-header { 
+            display: flex; align-items: center; gap: 12px; 
+            padding: 16px; background: linear-gradient(180deg, var(--panel), var(--panel-2)); 
+            border-bottom: 1px solid var(--line); 
+        }
+        .dropdown-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; color: #08101f; font-weight: 700; font-size: 1.1rem; overflow: hidden; }
+        .dropdown-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .dropdown-user-info { display: flex; flex-direction: column; min-width: 0; }
+        .dropdown-username { color: var(--text); font-weight: 700; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dropdown-email { color: var(--muted); font-size: 0.75rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dropdown-divider { height: 1px; background: var(--line); margin: 8px 0; }
+        .dropdown-item { 
+            display: flex; align-items: center; gap: 10px; 
+            padding: 12px 16px; color: var(--text); text-decoration: none; 
+            font-size: 0.88rem; transition: all 0.15s; border: none; 
+            background: none; width: 100%; text-align: left; cursor: pointer; 
+        }
+        .dropdown-item:hover { background: var(--panel-2); color: var(--accent); }
+        .dropdown-item.danger { color: #ef4444; }
+        .dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
+        .dropdown-item i { width: 20px; text-align: center; }
+
+        /* Economy Page Styles */
+        .economy-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .economy-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); margin-bottom: 1rem; font-size: 1.1rem; }
+        .balance-display { font-size: 2.5rem; font-weight: 800; color: var(--accent-2); margin: 0.5rem 0; display: flex; align-items: center; gap: 0.75rem; }
+        .balance-display i { font-size: 2rem; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+        .btn { padding: 0.7rem 1.2rem; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #fff; box-shadow: 0 4px 14px rgba(109,140,255,0.3); }
+        .btn-secondary { background: var(--panel-2); border: 1px solid var(--line); color: var(--text); }
+        .btn-success { background: linear-gradient(135deg, var(--accent-2), #1ea892); color: #fff; box-shadow: 0 4px 14px rgba(35,213,171,0.3); }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.08); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .shop-item { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 1.25rem; margin: 0.75rem 0; display: flex; flex-direction: column; gap: 1rem; transition: all 0.2s; }
+        .shop-item:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(109,140,255,0.15); }
+        .shop-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+        .shop-item-info { flex: 1; }
+        .shop-item-info h4 { color: var(--text); margin: 0 0 0.25rem; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .shop-item-info p { color: var(--muted); font-size: 0.82rem; margin: 0; }
+        .shop-item-badge { font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        .badge-owned { background: rgba(35,213,171,0.2); color: var(--accent-2); }
+        .badge-equipped { background: rgba(109,140,255,0.2); color: var(--accent); }
+        .badge-locked { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .shop-item-price { color: var(--accent-2); font-weight: 800; font-size: 1.2rem; white-space: nowrap; }
+        .shop-item-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .shop-item-preview { background: rgba(109,140,255,0.1); border: 1px dashed var(--accent); color: var(--accent); }
+
+        .achievement-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; margin: 0.5rem 0; display: flex; align-items: center; gap: 1rem; transition: all 0.2s; }
+        .achievement-card.unlocked { border-color: var(--accent-2); background: rgba(35,213,171,0.05); }
+        .achievement-icon { width: 56px; height: 56px; border-radius: 12px; display: grid; place-items: center; font-size: 1.5rem; flex-shrink: 0; }
+        .achievement-icon.locked { background: var(--panel); color: var(--muted); }
+        .achievement-icon.unlocked { background: linear-gradient(135deg, var(--accent-2), #1ea892); color: #08101f; }
+        .achievement-info { flex: 1; min-width: 0; }
+        .achievement-info h4 { color: var(--text); margin: 0 0 0.25rem; font-size: 0.95rem; }
+        .achievement-info p { color: var(--muted); font-size: 0.78rem; margin: 0; }
+        .achievement-reward { color: var(--accent-2); font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
+
         .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
         .form-row .settings-input { flex: 1; min-width: 150px; }
-        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
-        .btn { padding: 0.6rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; }
-        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
-        .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
-        .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
-        .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        .section-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); margin-bottom: 1rem; }
+        .settings-input { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 0.75rem 1rem; color: var(--text); font-size: 0.9rem; width: 100%; font-family: inherit; }
+        .settings-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(109,140,255,0.2); }
+        .section-desc { color: var(--muted); font-size: 0.85rem; margin-bottom: 1rem; }
+
+        /* Profile Preview Selector */
+        .preview-selector { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .preview-profile { 
+            display: flex; align-items: center; gap: 1.5rem; 
+            padding: 1.5rem; background: linear-gradient(180deg, var(--panel), var(--panel-2)); 
+            border-radius: 12px; border: 1px solid var(--line); 
+        }
+        .preview-avatar-large { 
+            width: 80px; height: 80px; border-radius: 50%; 
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)); 
+            display: grid; place-items: center; color: #08101f; font-weight: 800; font-size: 1.8rem; 
+            flex-shrink: 0; overflow: hidden; position: relative; 
+        }
+        .preview-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-name { font-size: 1.4rem; font-weight: 700; color: var(--text); }
+        .preview-title { 
+            display: inline-block; padding: 4px 12px; border-radius: 20px; 
+            font-size: 0.75rem; font-weight: 700; margin-top: 0.25rem; 
+            background: var(--accent); color: white; 
+        }
+        .preview-message { 
+            flex: 1; background: var(--panel); border-radius: 12px; 
+            padding: 12px 16px; font-size: 0.95rem; 
+            border: 1px solid var(--line); 
+        }
+        .preview-text-effect { /* applied to preview message */ }
+
+        .shop-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .shop-tab { 
+            padding: 0.7rem 1.2rem; border-radius: 10px; border: 1px solid var(--line); 
+            background: var(--panel-2); color: var(--text); cursor: pointer; 
+            font-weight: 600; transition: all 0.15s; 
+        }
+        .shop-tab.active { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; }
+        .shop-tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+        .shop-category { display: none; }
+        .shop-category.active { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+
+        /* Title/Effect Selector in Edit Profile */
+        .selector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; }
+        .selector-item { 
+            background: var(--panel-2); border: 2px solid var(--line); border-radius: 10px; 
+            padding: 1rem; cursor: pointer; transition: all 0.15s; text-align: center; 
+        }
+        .selector-item:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .selector-item.selected { border-color: var(--accent); background: rgba(109,140,255,0.1); }
+        .selector-item.equipped { border-color: var(--accent-2); background: rgba(35,213,171,0.1); }
+        .selector-item.locked { opacity: 0.5; cursor: not-allowed; }
+        .selector-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .selector-name { font-weight: 600; font-size: 0.85rem; color: var(--text); margin-bottom: 0.25rem; }
+        .selector-cost { font-size: 0.7rem; color: var(--muted); }
+        .selector-cost.free { color: var(--accent-2); }
+        .selector-equipped-badge { font-size: 0.6rem; background: var(--accent); color: white; padding: 2px 6px; border-radius: 8px; margin-top: 0.5rem; display: inline-block; }
+
+        /* Modal Styles */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+        .modal-content { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--line); }
+        .modal-header h3 { margin: 0; color: var(--accent); display: flex; align-items: center; gap: 0.5rem; }
+        .modal-close { background: none; border: none; color: var(--muted); font-size: 1.25rem; cursor: pointer; padding: 0.5rem; border-radius: 8px; transition: all 0.15s; }
+        .modal-close:hover { color: var(--accent); background: var(--panel-2); }
+        .modal-body { padding: 1.5rem; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+        .form-section { margin-bottom: 1.5rem; }
+        .form-section h4 { color: var(--text); font-size: 0.95rem; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; color: var(--muted); font-size: 0.8rem; margin-bottom: 0.5rem; }
+        .avatar-input-group { display: flex; gap: 0.5rem; }
+        .avatar-input-group .settings-input { flex: 1; }
+        .avatar-preview { margin-top: 0.75rem; }
+        .form-hint { color: var(--muted); font-size: 0.75rem; margin-top: 0.5rem; }
+        .profile-preview-section { margin-bottom: 1.5rem; }
+        .preview-card { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--panel-2); border-radius: 12px; border: 1px solid var(--line); }
+        .preview-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; color: #08101f; font-weight: 700; font-size: 1.3rem; flex-shrink: 0; overflow: hidden; }
+        .preview-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .preview-info h4 { margin: 0 0 0.25rem; color: var(--text); }
+        .preview-title { font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; background: var(--accent); color: white; font-weight: 700; }
+
+        /* Text Effect Classes for Chat/Preview */
+        .text-effect-rgb { background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #4b00ff, #8b00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: rgb-shift 3s linear infinite; background-size: 400% 100%; }
+        .text-effect-glow { text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent), 0 0 30px var(--accent); }
+        .text-effect-pulse { animation: pulse-glow 2s ease-in-out infinite; }
+        .text-effect-shimmer { background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 200% 100%; animation: shimmer 2s linear infinite; }
+        .text-effect-neon { text-shadow: 0 0 5px var(--accent-2), 0 0 10px var(--accent-2), 0 0 20px var(--accent-2), 0 0 40px var(--accent-2); }
+        .text-effect-rainbow { background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bcb77, #4d96ff, #a29bfe, #fd79a8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; background-size: 400% 100%; animation: rgb-shift 4s linear infinite; }
+        @keyframes rgb-shift { 0% { background-position: 0% 50%; } 100% { background-position: 400% 50%; } }
+        @keyframes pulse-glow { 0%, 100% { text-shadow: 0 0 5px var(--accent); } 50% { text-shadow: 0 0 20px var(--accent), 0 0 30px var(--accent); } }
+        @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        /* Chat message with title/effect support */
+        .chat-msg .msg-username { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 700; }
+        .chat-msg .msg-title { font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; font-weight: 700; white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -49,7 +202,7 @@
                 </div>
             </div>
 
-            <div class="side-menu-user">
+            <div class="side-menu-user" style="display:none;">
                 <div id="sideAvatarInitials" class="side-avatar"></div>
                 <div class="side-user-info">
                     <span id="sideUserName" class="side-username"></span>
@@ -77,9 +230,6 @@
                 <button class="side-nav-btn" data-section="economy" id="navEconomy">
                     <i class="fas fa-coins"></i><span>Economy</span>
                 </button>
-                <a href="settings.html" class="side-nav-btn side-nav-link">
-                    <i class="fas fa-cog"></i><span>Settings</span>
-                </a>
             </nav>
 
             <div class="side-menu-footer">
@@ -98,9 +248,38 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <h1 id="pageTitle" class="page-title">Home</h1>
-                <div id="topbarBalance" style="display: none; align-items: center; gap: 0.5rem; color: var(--accent2); font-weight: 600;">
-                    <i class="fas fa-coins"></i> <span id="topbarBalanceValue">0</span>
+                <div class="topbar-right">
+                    <div id="topbarBalance" style="display:none; align-items: center; gap: 0.5rem; color: var(--accent2); font-weight: 600; font-size: 0.85rem; padding: 0.4rem 0.8rem; background: rgba(35,213,171,0.1); border-radius: 20px;">
+                        <i class="fas fa-coins"></i> <span id="topbarBalanceValue">0</span>
+                    </div>
+                    <div id="topbarProfile" class="topbar-profile" style="display:none;">
+                        <div id="topbarAvatar" class="topbar-avatar"></div>
+                        <span id="topbarUsername" class="topbar-username"></span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
                 </div>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <div id="profileDropdown" class="profile-dropdown" style="display:none;">
+                <div class="dropdown-header">
+                    <div id="dropdownAvatar" class="dropdown-avatar"></div>
+                    <div class="dropdown-user-info">
+                        <span id="dropdownUsername" class="dropdown-username"></span>
+                        <span id="dropdownEmail" class="dropdown-email"></span>
+                    </div>
+                </div>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item" id="editProfileBtn">
+                    <i class="fas fa-user-edit"></i> Edit Profile
+                </button>
+                <a href="settings.html" class="dropdown-item" id="settingsBtn">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+                <div class="dropdown-divider"></div>
+                <button class="dropdown-item danger" id="dropdownLogoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
             </div>
 
             <!-- ── Home Section ── -->
@@ -287,7 +466,7 @@
                 </div>
             </section>
 
-            <!-- ── Chat Section (inline) ── -->
+            <!-- ── Chat Section ── -->
             <section id="sectionChat" class="content-section">
                 <div class="inline-chat-wrap">
                     <div class="inline-chat-header">
@@ -304,8 +483,9 @@
 
             <!-- ── Economy Section ── -->
             <section id="sectionEconomy" class="content-section">
+                <!-- Balance Card -->
                 <div class="economy-card">
-                    <div class="section-header"><i class="fas fa-coins"></i><h2>Balance</h2></div>
+                    <div class="economy-header"><i class="fas fa-coins"></i><h2>Balance</h2></div>
                     <div class="balance-display">
                         <i class="fas fa-coins"></i> <span id="balance">Loading...</span> coins
                     </div>
@@ -314,74 +494,66 @@
                     </div>
                 </div>
 
-                <div class="economy-card">
-                    <div class="section-header"><i class="fas fa-store"></i><h2>Shop</h2></div>
-                    <p style="color: var(--muted); margin-bottom: 1rem;">Purchase items with your coins. Items will be unlocked in your account.</p>
-                    <div id="shopItems">
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <h4><i class="fas fa-star"></i> VIP Status</h4>
-                                <p>Unlock exclusive games, priority support, and custom profile badge</p>
-                            </div>
-                            <div>
-                                <span class="shop-item-price">5,000 coins</span>
-                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('vip_status', 5000)"><i class="fas fa-shopping-cart"></i> Buy</button>
-                            </div>
-                        </div>
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <h4><i class="fas fa-palette"></i> Custom Theme</h4>
-                                <p>Create and apply your own color theme across the portal</p>
-                            </div>
-                            <div>
-                                <span class="shop-item-price">2,500 coins</span>
-                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('custom_theme', 2500)"><i class="fas fa-shopping-cart"></i> Buy</button>
-                            </div>
-                        </div>
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <h4><i class="fas fa-bolt"></i> Double Coins Boost (1 hour)</h4>
-                                <p>Earn 2x coins from all activities for 1 hour</p>
-                            </div>
-                            <div>
-                                <span class="shop-item-price">1,000 coins</span>
-                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('double_coins_1h', 1000)"><i class="fas fa-shopping-cart"></i> Buy</button>
-                            </div>
-                        </div>
-                        <div class="shop-item">
-                            <div class="shop-item-info">
-                                <h4><i class="fas fa-crown"></i> Golden Username</h4>
-                                <p>Display your username in gold across the portal and chat</p>
-                            </div>
-                            <div>
-                                <span class="shop-item-price">3,000 coins</span>
-                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('golden_username', 3000)"><i class="fas fa-shopping-cart"></i> Buy</button>
-                            </div>
+                <!-- Shop Preview -->
+                <div class="preview-selector">
+                    <div class="economy-header"><i class="fas fa-eye"></i><h2>Preview</h2></div>
+                    <p class="section-desc">Select items below to preview how they look on your profile</p>
+                    <div class="preview-profile" id="shopPreview">
+                        <div class="preview-avatar-large" id="previewAvatar"></div>
+                        <div class="preview-info">
+                            <div class="preview-name" id="previewName">Username</div>
+                            <div class="preview-title" id="previewTitle" style="display:none;">No Title</div>
+                            <div class="preview-message" id="previewMessage" style="margin-top: 0.75rem;">This is how your message looks in chat</div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Shop Tabs -->
+                <div class="shop-tabs" id="shopTabs">
+                    <button class="shop-tab active" data-shop-tab="titles"><i class="fas fa-medal"></i> Titles</button>
+                    <button class="shop-tab" data-shop-tab="effects"><i class="fas fa-magic"></i> Text Effects</button>
+                    <button class="shop-tab" data-shop-tab="badges"><i class="fas fa-badge"></i> Badges</button>
+                </div>
+
+                <!-- Titles Category -->
+                <div class="shop-category active" id="shopTitles">
+                    <div class="shop-grid" id="titlesGrid"></div>
+                </div>
+
+                <!-- Effects Category -->
+                <div class="shop-category" id="shopEffects">
+                    <div class="shop-grid" id="effectsGrid"></div>
+                </div>
+
+                <!-- Badges Category -->
+                <div class="shop-category" id="shopBadges">
+                    <div class="shop-grid" id="badgesGrid"></div>
+                </div>
+
+                <!-- Achievements -->
                 <div class="economy-card">
-                    <div class="section-header"><i class="fas fa-trophy"></i><h2>Achievements</h2></div>
-                    <p style="color: var(--muted); margin-bottom: 1rem;">Complete activities to unlock achievements and earn rewards.</p>
+                    <div class="economy-header"><i class="fas fa-trophy"></i><h2>Achievements</h2></div>
+                    <p class="section-desc">Complete activities to unlock achievements and earn rewards</p>
                     <div id="achievements" style="display: none;"></div>
                 </div>
 
+                <!-- Track Activity -->
                 <div class="economy-card">
-                    <div class="section-header"><i class="fas fa-chart-line"></i><h2>Track Activity</h2></div>
-                    <p style="color: var(--muted); margin-bottom: 1rem;">Manually track activities to earn coins and progress towards achievements.</p>
+                    <div class="economy-header"><i class="fas fa-chart-line"></i><h2>Track Activity</h2></div>
+                    <p class="section-desc">Manually track activities to earn coins and progress towards achievements</p>
                     <div class="form-row">
                         <input type="text" id="activityInput" class="settings-input" placeholder="Enter activity (e.g., login, purchase, game_play)">
                         <button class="btn btn-primary" onclick="trackActivity()"><i class="fas fa-plus"></i> Track Activity</button>
                     </div>
                 </div>
 
+                <!-- Admin Award Coins -->
                 <div class="economy-card">
-                    <div class="section-header"><i class="fas fa-gift"></i><h2>Admin: Award Coins</h2></div>
-                    <p style="color: var(--muted); margin-bottom: 1rem;">Award coins to yourself or test the economy system.</p>
+                    <div class="economy-header"><i class="fas fa-gift"></i><h2>Admin: Award Coins</h2></div>
+                    <p class="section-desc">Award coins to test the economy system</p>
                     <div class="form-row">
                         <input type="number" id="awardAmount" class="settings-input" placeholder="Amount (coins)" min="1" value="100">
-                        <button class="btn btn-primary" onclick="awardMoney()"><i class="fas fa-coins"></i> Award Coins</button>
+                        <button class="btn btn-success" onclick="awardMoney()"><i class="fas fa-coins"></i> Award Coins</button>
                     </div>
                 </div>
             </section>
@@ -393,13 +565,9 @@
     <!-- ═══ FULLSCREEN GAME OVERLAY ═══ -->
     <div id="gameOverlay" class="game-overlay" style="display:none;">
         <iframe id="gameFrame" class="game-frame" src="" allowfullscreen></iframe>
-
-        <!-- Collapsed mini-menu trigger (press - key or tap the tab) -->
         <div id="gameMenuTab" class="game-menu-tab" title="Press - to open menu">
             <i class="fas fa-minus"></i>
         </div>
-
-        <!-- Mini menu panel -->
         <div id="gameMiniMenu" class="game-mini-menu" style="display:none;">
             <div class="mini-menu-title" id="miniMenuGameTitle"></div>
             <div class="mini-menu-btns">
@@ -411,8 +579,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- In-game floating chat panel -->
         <div id="gameChat" class="game-chat-panel" style="display:none;">
             <div class="game-chat-header">
                 <span><i class="fas fa-comments"></i> Live Chat</span>
@@ -476,188 +642,835 @@
         </div>
     </div>
 
-    <!-- JavaScript: Economy System -->
+    <!-- ═══ EDIT PROFILE MODAL ═══ -->
+    <div id="editProfileModal" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> Edit Profile</h3>
+                <button class="modal-close" onclick="closeEditProfileModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="profile-preview-section">
+                    <div class="preview-card">
+                        <div class="preview-avatar" id="modalPreviewAvatar"></div>
+                        <div class="preview-info">
+                            <h4 id="modalPreviewUsername">Username</h4>
+                            <div class="preview-title" id="modalPreviewTitle" style="display:none;">No Title</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h4><i class="fas fa-image"></i> Profile Picture</h4>
+                    <div class="form-group">
+                        <label>Avatar URL (Image/GIF)</label>
+                        <div class="avatar-input-group">
+                            <input type="url" id="avatarUrlInput" class="settings-input" placeholder="https://example.com/avatar.gif or .png, .jpg, .webp">
+                            <button class="btn btn-secondary" onclick="testAvatarUrl()"><i class="fas fa-eye"></i> Preview</button>
+                        </div>
+                        <p class="form-hint">Paste a direct link to an image or GIF. Max 5MB recommended.</p>
+                    </div>
+                    <div class="avatar-preview" id="avatarPreview" style="display:none;">
+                        <img id="avatarPreviewImg" src="" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 50%; border: 2px solid var(--border);">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-user"></i> Display Name</h4>
+                    <div class="form-group">
+                        <input type="text" id="displayNameInput" class="settings-input" placeholder="Your display name" maxlength="30">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-id-card"></i> Real Name (Private)</h4>
+                    <div class="form-group">
+                        <input type="text" id="realNameInput" class="settings-input" placeholder="Your real name (not shown publicly)">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-pen"></i> Bio</h4>
+                    <div class="form-group">
+                        <textarea id="bioInput" class="settings-input" placeholder="Tell others about yourself..." rows="3" maxlength="200"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-medal"></i> Equipped Title</h4>
+                    <div class="selector-grid" id="titleSelector"></div>
+                </div>
+
+                <div class="form-section">
+                    <h4><i class="fas fa-magic"></i> Text Effect</h4>
+                    <div class="selector-grid" id="effectSelector"></div>
+                </div>
+
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeEditProfileModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveProfile()"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/scripts/firebase-init.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/scripts/auth.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/Main.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/settings.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/live-user-tracker.js"></script>
+
+    <!-- ═══ ECONOMY & PROFILE SYSTEM ═══ -->
     <script>
-        // ==========================================
-        // ECONOMY CONFIGURATION
-        // ==========================================
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    const ACTIVITY_WORKER = 'https://activity-tracker.hyperionx175.com';
+    const FIREBASE_WORKER = 'https://firebase-config.hyperionx175.com';
+    const USERNAME_KEY = 'devportal_username';
+    const PROFILE_KEY = 'devportal_profile';
 
-        const ACTIVITY_WORKER = 'https://activity-tracker.hyperionx175.com';
-        const FIREBASE_WORKER = 'https://firebase-config.hyperionx175.com';
-        const USERNAME = 'lol8'; // Replace with your username system
+    // ==========================================
+    // SHOP DATA - TITLES, EFFECTS, BADGES
+    // ==========================================
+    const SHOP_TITLES = [
+        { id: 'newbie', name: 'Newbie', icon: '🌱', cost: 0, desc: 'Just getting started', free: true },
+        { id: 'gamer', name: 'Gamer', icon: '🎮', cost: 500, desc: 'Plays games daily' },
+        { id: 'pro', name: 'Pro Player', icon: '🏆', cost: 2000, desc: 'Skilled competitor' },
+        { id: 'veteran', name: 'Veteran', icon: '⚔️', cost: 5000, desc: 'Long-time member' },
+        { id: 'legend', name: 'Legend', icon: '👑', cost: 15000, desc: 'Top tier player' },
+        { id: 'dev', name: 'Developer', icon: '💻', cost: 10000, desc: 'Code wizard' },
+        { id: 'vip', name: 'VIP', icon: '💎', cost: 25000, desc: 'Exclusive member' },
+        { id: 'admin', name: 'Admin', icon: '🛡️', cost: 0, desc: 'Server administrator', free: true, adminOnly: true },
+        { id: 'mod', name: 'Moderator', icon: '🔨', cost: 0, desc: 'Keeps the peace', free: true, adminOnly: true },
+        { id: 'streamer', name: 'Streamer', icon: '📺', cost: 8000, desc: 'Content creator' },
+        { id: 'artist', name: 'Artist', icon: '🎨', cost: 3000, desc: 'Creative mind' },
+        { id: 'musician', name: 'Musician', icon: '🎵', cost: 3000, desc: 'Music lover' },
+    ];
 
-        // ==========================================
-        // BALANCE SYSTEM
-        // ==========================================
+    const SHOP_EFFECTS = [
+        { id: 'none', name: 'Normal', icon: '✨', cost: 0, desc: 'No effect', className: '', free: true },
+        { id: 'rgb', name: 'RGB Rainbow', icon: '🌈', cost: 3000, desc: 'Animated rainbow text', className: 'text-effect-rgb' },
+        { id: 'glow', name: 'Glow', icon: '✨', cost: 1500, desc: 'Subtle glow effect', className: 'text-effect-glow' },
+        { id: 'pulse', name: 'Pulse', icon: '💓', cost: 2000, desc: 'Pulsing glow animation', className: 'text-effect-pulse' },
+        { id: 'shimmer', name: 'Shimmer', icon: '✨', cost: 2500, desc: 'Shimmering highlight', className: 'text-effect-shimmer' },
+        { id: 'neon', name: 'Neon', icon: '💡', cost: 4000, desc: 'Neon sign effect', className: 'text-effect-neon' },
+        { id: 'rainbow', name: 'Rainbow Flow', icon: '🌈', cost: 5000, desc: 'Flowing rainbow gradient', className: 'text-effect-rainbow' },
+    ];
 
-        async function fetchBalance() {
-            try {
-                const response = await fetch(`${ACTIVITY_WORKER}/user-balance/${USERNAME}`);
-                const data = await response.json();
-                const balance = data.balance || 0;
-                document.getElementById('balance').innerText = balance.toLocaleString();
-                document.getElementById('topbarBalanceValue').innerText = balance.toLocaleString();
-                document.getElementById('topbarBalance').style.display = 'flex';
-                return balance;
-            } catch (error) {
-                document.getElementById('balance').innerText = 'Error';
-                console.error('Error fetching balance:', error);
-                return 0;
+    const SHOP_BADGES = [
+        { id: 'none', name: 'No Badge', icon: '', cost: 0, desc: 'No badge', free: true },
+        { id: 'verified', name: 'Verified', icon: '✅', cost: 10000, desc: 'Verified member' },
+        { id: 'supporter', name: 'Supporter', icon: '❤️', cost: 2000, desc: 'Supports the portal' },
+        { id: 'early', name: 'Early Bird', icon: '🐦', cost: 0, desc: 'Joined early', free: true },
+        { id: 'bug_hunter', name: 'Bug Hunter', icon: '🐛', cost: 5000, desc: 'Reports bugs' },
+        { id: 'helper', name: 'Helper', icon: '🤝', cost: 3000, desc: 'Helps others' },
+    ];
+
+    // ==========================================
+    // PROFILE & ECONOMY STATE
+    // ==========================================
+    let currentProfile = null;
+    let currentBalance = 0;
+    let ownedTitles = [];
+    let ownedEffects = [];
+    let ownedBadges = [];
+    let equippedTitle = 'newbie';
+    let equippedEffect = 'none';
+    let equippedBadge = 'none';
+
+    // ==========================================
+    // FIREBASE HELPERS
+    // ==========================================
+    async function getFirebase() {
+        if (window.firebase && window.firebase.apps.length > 0) {
+            return window.firebase;
+        }
+        try {
+            const response = await fetch(`${FIREBASE_WORKER}/firebase-config`);
+            const config = await response.json();
+            if (!window.firebase.apps.length) {
+                window.firebase.initializeApp(config);
+            }
+            return window.firebase;
+        } catch (error) {
+            console.error('Firebase init error:', error);
+            return null;
+        }
+    }
+
+    async function saveProfileToFirebase(profile) {
+        try {
+            const firebase = await getFirebase();
+            if (!firebase) return false;
+            const db = firebase.firestore();
+            const user = firebase.auth().currentUser;
+            if (!user) return false;
+            await db.collection('profiles').doc(user.uid).set(profile, { merge: true });
+            return true;
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            return false;
+        }
+    }
+
+    async function loadProfileFromFirebase() {
+        try {
+            const firebase = await getFirebase();
+            if (!firebase) return null;
+            const db = firebase.firestore();
+            const user = firebase.auth().currentUser;
+            if (!user) return null;
+            const doc = await db.collection('profiles').doc(user.uid).get();
+            return doc.exists ? doc.data() : null;
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            return null;
+        }
+    }
+
+    // ==========================================
+    // LOCAL STORAGE HELPERS
+    // ==========================================
+    function saveProfileLocal(profile) {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        currentProfile = profile;
+    }
+
+    function loadProfileLocal() {
+        const stored = localStorage.getItem(PROFILE_KEY);
+        if (stored) {
+            currentProfile = JSON.parse(stored);
+            return currentProfile;
+        }
+        return null;
+    }
+
+    function applyProfile(profile) {
+        if (!profile) return;
+        currentProfile = profile;
+        equippedTitle = profile.equippedTitle || 'newbie';
+        equippedEffect = profile.equippedEffect || 'none';
+        equippedBadge = profile.equippedBadge || 'none';
+        ownedTitles = profile.ownedTitles || ['newbie'];
+        ownedEffects = profile.ownedEffects || ['none'];
+        ownedBadges = profile.ownedBadges || ['none'];
+        updateProfileUI();
+        renderShop();
+    }
+
+    function updateProfileUI() {
+        if (!currentProfile) return;
+        const name = currentProfile.displayName || 'User';
+        const avatar = currentProfile.avatarUrl || '';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+        // Topbar
+        const topbarAvatar = document.getElementById('topbarAvatar');
+        const topbarUsername = document.getElementById('topbarUsername');
+        const topbarProfile = document.getElementById('topbarProfile');
+        const topbarBalance = document.getElementById('topbarBalance');
+
+        if (topbarAvatar) {
+            if (avatar) {
+                topbarAvatar.innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            } else {
+                topbarAvatar.textContent = initials;
+                topbarAvatar.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-2))';
             }
         }
+        if (topbarUsername) topbarUsername.textContent = name;
+        if (topbarProfile) topbarProfile.style.display = 'flex';
+        if (topbarBalance) topbarBalance.style.display = 'flex';
 
-        // ==========================================
-        // ACTIVITY TRACKING
-        // ==========================================
+        // Dropdown
+        const dropdownAvatar = document.getElementById('dropdownAvatar');
+        const dropdownUsername = document.getElementById('dropdownUsername');
+        const dropdownEmail = document.getElementById('dropdownEmail');
+        if (dropdownAvatar) {
+            if (avatar) {
+                dropdownAvatar.innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            } else {
+                dropdownAvatar.textContent = initials;
+                dropdownAvatar.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-2))';
+            }
+        }
+        if (dropdownUsername) dropdownUsername.textContent = name;
+        if (dropdownEmail) dropdownEmail.textContent = currentProfile.email || '';
 
-        async function trackActivity() {
-            const activity = document.getElementById('activityInput').value || 'login';
-            try {
-                const response = await fetch(`${ACTIVITY_WORKER}/track-activity`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: USERNAME,
-                        activity: activity,
-                        details: { page: window.location.pathname, timestamp: new Date().toISOString() }
-                    })
+        // Balance
+        updateBalanceDisplay(currentBalance);
+    }
+
+    function updateBalanceDisplay(balance) {
+        currentBalance = balance;
+        const balEl = document.getElementById('balance');
+        const topbarBal = document.getElementById('topbarBalanceValue');
+        if (balEl) balEl.textContent = balance.toLocaleString();
+        if (topbarBal) topbarBal.textContent = balance.toLocaleString();
+    }
+
+    // ==========================================
+    // BALANCE SYSTEM
+    // ==========================================
+    async function fetchBalance() {
+        try {
+            const response = await fetch(`${ACTIVITY_WORKER}/user-balance/${getUsername()}`);
+            const data = await response.json();
+            const balance = data.balance || 0;
+            updateBalanceDisplay(balance);
+            return balance;
+        } catch (error) {
+            console.error('Error fetching balance:', error);
+            const balEl = document.getElementById('balance');
+            if (balEl) balEl.textContent = 'Error';
+            return 0;
+        }
+    }
+
+    function getUsername() {
+        if (currentProfile?.firebaseUid) return currentProfile.firebaseUid;
+        return localStorage.getItem(USERNAME_KEY) || 'anonymous';
+    }
+
+    // ==========================================
+    // ACTIVITY TRACKING
+    // ==========================================
+    async function trackActivity() {
+        const activity = document.getElementById('activityInput')?.value || 'login';
+        try {
+            const response = await fetch(`${ACTIVITY_WORKER}/track-activity`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: getUsername(),
+                    activity: activity,
+                    details: { page: window.location.pathname, timestamp: new Date().toISOString() }
+                })
+            });
+            const result = await response.json();
+            alert('Activity tracked successfully!');
+            document.getElementById('activityInput').value = '';
+            await fetchBalance();
+            await loadAchievements();
+        } catch (error) {
+            console.error('Error tracking activity:', error);
+            alert('Failed to track activity');
+        }
+    }
+
+    // ==========================================
+    // MONEY/ECONOMY SYSTEM
+    // ==========================================
+    async function awardMoney() {
+        const amount = document.getElementById('awardAmount')?.value;
+        if (!amount || isNaN(amount) || amount <= 0) {
+            alert('Please enter a valid amount');
+            return;
+        }
+        try {
+            const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: getUsername(),
+                    achievementId: `reward_${amount}`,
+                    details: { source: 'site_activity', amount }
+                })
+            });
+            const result = await response.json();
+            alert(`💰 Awarded ${amount} coins! New balance: ${result.balance}`);
+            await fetchBalance();
+        } catch (error) {
+            console.error('Error awarding money:', error);
+            alert('Failed to award money');
+        }
+    }
+
+    async function purchaseItem(itemId, cost, type) {
+        if (currentBalance < cost) {
+            alert(`Not enough coins! You have ${currentBalance.toLocaleString()}, need ${cost.toLocaleString()}`);
+            return;
+        }
+        try {
+            const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: getUsername(),
+                    achievementId: `purchase_${type}_${itemId}`,
+                    details: { source: 'shop_purchase', itemId, cost, type }
+                })
+            });
+            const result = await response.json();
+            alert(`✅ Purchased ${itemId} for ${cost.toLocaleString()} coins! New balance: ${result.balance}`);
+            await fetchBalance();
+            await loadShopOwnership();
+            renderShop();
+            updatePreview();
+        } catch (error) {
+            console.error('Error purchasing:', error);
+            alert('Failed to purchase item');
+        }
+    }
+
+    async function equipItem(itemId, type) {
+        if (type === 'title') equippedTitle = itemId;
+        else if (type === 'effect') equippedEffect = itemId;
+        else if (type === 'badge') equippedBadge = itemId;
+
+        currentProfile.equippedTitle = equippedTitle;
+        currentProfile.equippedEffect = equippedEffect;
+        currentProfile.equippedBadge = equippedBadge;
+        saveProfileLocal(currentProfile);
+        await saveProfileToFirebase(currentProfile);
+        updateProfileUI();
+        renderShop();
+        updatePreview();
+        alert(`${type.charAt(0).toUpperCase() + type.slice(1)} equipped!`);
+    }
+
+    async function loadShopOwnership() {
+        try {
+            const response = await fetch(`${ACTIVITY_WORKER}/user-achievements/${getUsername()}`);
+            const data = await response.json();
+            ownedTitles = ['newbie'];
+            ownedEffects = ['none'];
+            ownedBadges = ['none'];
+            if (data.achievements) {
+                data.achievements.forEach(ach => {
+                    if (ach.achievementId?.startsWith('purchase_title_')) {
+                        ownedTitles.push(ach.achievementId.replace('purchase_title_', ''));
+                    } else if (ach.achievementId?.startsWith('purchase_effect_')) {
+                        ownedEffects.push(ach.achievementId.replace('purchase_effect_', ''));
+                    } else if (ach.achievementId?.startsWith('purchase_badge_')) {
+                        ownedBadges.push(ach.achievementId.replace('purchase_badge_', ''));
+                    }
                 });
-                const result = await response.json();
-                console.log('Activity tracked:', result);
-                alert('Activity tracked successfully!');
-                document.getElementById('activityInput').value = '';
-                await fetchBalance();
-                await loadAchievements();
-            } catch (error) {
-                console.error('Error tracking activity:', error);
-                alert('Failed to track activity');
             }
+            // Add equipped items to owned
+            if (!ownedTitles.includes(equippedTitle)) ownedTitles.push(equippedTitle);
+            if (!ownedEffects.includes(equippedEffect)) ownedEffects.push(equippedEffect);
+            if (!ownedBadges.includes(equippedBadge)) ownedBadges.push(equippedBadge);
+        } catch (error) {
+            console.error('Error loading shop ownership:', error);
         }
+    }
 
-        // ==========================================
-        // MONEY/ECONOMY SYSTEM
-        // ==========================================
+    // ==========================================
+    // ACHIEVEMENTS SYSTEM
+    // ==========================================
+    async function loadAchievements() {
+        try {
+            const response = await fetch(`${ACTIVITY_WORKER}/user-achievements/${getUsername()}`);
+            const data = await response.json();
+            const container = document.getElementById('achievements');
+            if (!container) return;
 
-        async function awardMoney() {
-            const amount = document.getElementById('awardAmount').value;
-            if (!amount || isNaN(amount) || amount <= 0) {
-                alert('Please enter a valid amount');
+            if (!data.achievements || data.achievements.length === 0) {
+                container.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 2rem;">No achievements yet. Complete activities to earn!</p>';
+                container.style.display = 'block';
                 return;
             }
 
-            try {
-                const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: USERNAME,
-                        achievementId: `reward_${amount}`,
-                        details: { source: 'site_activity', amount }
-                    })
-                });
-                const result = await response.json();
-                alert(`💰 Awarded ${amount} coins! New balance: ${result.balance}`);
-                await fetchBalance();
-            } catch (error) {
-                console.error('Error awarding money:', error);
-                alert('Failed to award money');
-            }
-        }
-
-        async function purchaseItem(itemId, cost) {
-            // For demo - in real app, this would call a purchase API
-            // We'll use the achievement unlock as a proxy for spending
-            try {
-                const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: USERNAME,
-                        achievementId: `purchase_${itemId}`,
-                        details: { source: 'shop_purchase', itemId, cost }
-                    })
-                });
-                const result = await response.json();
-                alert(`🛒 Purchased ${itemId} for ${cost} coins! New balance: ${result.balance}`);
-                await fetchBalance();
-            } catch (error) {
-                console.error('Error purchasing item:', error);
-                alert('Failed to purchase item');
-            }
-        }
-
-        // ==========================================
-        // ACHIEVEMENTS SYSTEM
-        // ==========================================
-
-        async function loadAchievements() {
-            try {
-                const response = await fetch(`${ACTIVITY_WORKER}/user-achievements/${USERNAME}`);
-                const data = await response.json();
-
-                const container = document.getElementById('achievements');
-                if (data.achievements.length === 0) {
-                    container.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 2rem;">No achievements yet. Complete activities to earn!</p>';
-                    container.style.display = 'block';
-                    return;
-                }
-
-                container.innerHTML = data.achievements.map(ach => `
+            container.innerHTML = data.achievements.map(ach => {
+                const isPurchase = ach.achievementId?.startsWith('purchase_');
+                const isReward = ach.achievementId?.startsWith('reward_');
+                if (isPurchase || isReward) return ''; // Don't show purchases/rewards as achievements
+                return `
                     <div class="achievement-card ${ach.completed ? 'unlocked' : ''}">
-                        <h4>${ach.title} ${ach.completed ? '✅' : '🔒'}</h4>
-                        <p>${ach.description}</p>
-                        <p><strong>Reward:</strong> ${ach.reward} coins</p>
-                        <p><strong>Status:</strong> ${ach.completed ? 'Unlocked' : 'Locked'}</p>
+                        <div class="achievement-icon ${ach.completed ? 'unlocked' : 'locked'}">${ach.completed ? '✅' : '🔒'}</div>
+                        <div class="achievement-info">
+                            <h4>${ach.title}</h4>
+                            <p>${ach.description}</p>
+                        </div>
+                        <div class="achievement-reward">+${ach.reward} coins</div>
                     </div>
-                `).join('');
-                container.style.display = 'block';
-            } catch (error) {
-                console.error('Error loading achievements:', error);
+                `;
+            }).join('');
+            container.style.display = 'block';
+        } catch (error) {
+            console.error('Error loading achievements:', error);
+        }
+    }
+
+    // ==========================================
+    // SHOP RENDERING
+    // ==========================================
+    function renderShop() {
+        renderShopCategory('titles', SHOP_TITLES, 'title');
+        renderShopCategory('effects', SHOP_EFFECTS, 'effect');
+        renderShopCategory('badges', SHOP_BADGES, 'badge');
+    }
+
+    function renderShopCategory(categoryId, items, type) {
+        const grid = document.getElementById(`${categoryId}Grid`);
+        if (!grid) return;
+
+        const owned = type === 'title' ? ownedTitles : (type === 'effect' ? ownedEffects : ownedBadges);
+        const equipped = type === 'title' ? equippedTitle : (type === 'effect' ? equippedEffect : equippedBadge);
+
+        grid.innerHTML = items.map(item => {
+            const isOwned = owned.includes(item.id);
+            const isEquipped = equipped === item.id;
+            const isFree = item.free || item.cost === 0;
+            const isAdminOnly = item.adminOnly && !currentProfile?.isAdmin;
+
+            return `
+                <div class="shop-item ${isEquipped ? 'equipped' : ''}" data-id="${item.id}" data-type="${type}">
+                    <div class="shop-item-header">
+                        <div class="shop-item-info">
+                            <h4><span class="selector-icon">${item.icon}</span> ${item.name}</h4>
+                            <p>${item.desc}</p>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+                            <span class="shop-item-price">${isFree ? 'FREE' : item.cost.toLocaleString() + ' <i class="fas fa-coins"></i>'}</span>
+                            <div>
+                                ${isOwned 
+                                    ? (isEquipped 
+                                        ? `<span class="shop-item-badge badge-equipped"><i class="fas fa-check"></i> Equipped</span>`
+                                        : `<button class="btn btn-secondary" onclick="equipItem('${item.id}', '${type}')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;"><i class="fas fa-check"></i> Equip</button>`
+                                    )
+                                    : (isFree || isAdminOnly
+                                        ? `<span class="shop-item-badge badge-locked">${isAdminOnly ? 'Admin Only' : 'Free'}</span>`
+                                        : `<button class="btn btn-primary" onclick="purchaseItem('${item.id}', ${item.cost}, '${type}')" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;"><i class="fas fa-shopping-cart"></i> Buy</button>`
+                                    )
+                                }
+                                ${!isOwned && !isFree && !isAdminOnly ? `<button class="btn btn-secondary shop-item-preview" onclick="previewItem('${item.id}', '${type}')"><i class="fas fa-eye"></i> Preview</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ==========================================
+    // PREVIEW SYSTEM
+    // ==========================================
+    function previewItem(itemId, type) {
+        let item = null;
+        if (type === 'title') item = SHOP_TITLES.find(i => i.id === itemId);
+        else if (type === 'effect') item = SHOP_EFFECTS.find(i => i.id === itemId);
+        else if (type === 'badge') item = SHOP_BADGES.find(i => i.id === itemId);
+        if (!item) return;
+
+        const previewName = document.getElementById('previewName');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewMessage = document.getElementById('previewMessage');
+        const previewAvatar = document.getElementById('previewAvatar');
+
+        if (type === 'title') {
+            if (previewTitle) {
+                previewTitle.textContent = item.name;
+                previewTitle.style.display = 'inline-block';
+                previewTitle.className = 'preview-title';
+            }
+        } else if (type === 'effect') {
+            if (previewMessage) {
+                previewMessage.className = 'preview-message preview-text-effect ' + (item.className || '');
+                previewMessage.textContent = `Preview: ${item.name} effect applied to your messages`;
+            }
+        } else if (type === 'badge') {
+            if (previewTitle) {
+                previewTitle.textContent = item.icon + ' ' + item.name;
+                previewTitle.style.display = 'inline-block';
+                previewTitle.className = 'preview-title';
             }
         }
+    }
 
-        // ==========================================
-        // FIREBASE CONFIG
-        // ==========================================
+    function updatePreview() {
+        const previewName = document.getElementById('previewName');
+        const previewTitle = document.getElementById('previewTitle');
+        const previewMessage = document.getElementById('previewMessage');
+        const previewAvatar = document.getElementById('previewAvatar');
+        const modalPreviewAvatar = document.getElementById('modalPreviewAvatar');
+        const modalPreviewUsername = document.getElementById('modalPreviewUsername');
+        const modalPreviewTitle = document.getElementById('modalPreviewTitle');
 
-        async function fetchFirebaseConfig() {
-            try {
-                const response = await fetch(`${FIREBASE_WORKER}/firebase-config`);
-                const config = await response.json();
-                console.log('Firebase Config:', config);
-                return config;
-            } catch (error) {
-                console.error('Error fetching Firebase config:', error);
-                return null;
+        if (!currentProfile) return;
+
+        const name = currentProfile.displayName || 'User';
+        const avatar = currentProfile.avatarUrl || '';
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+        // Title
+        const titleItem = SHOP_TITLES.find(t => t.id === equippedTitle);
+        // Effect
+        const effectItem = SHOP_EFFECTS.find(e => e.id === equippedEffect);
+        // Badge
+        const badgeItem = SHOP_BADGES.find(b => b.id === equippedBadge);
+
+        // Update preview profile
+        if (previewName) previewName.textContent = name;
+        if (previewTitle) {
+            let titleText = '';
+            if (badgeItem && badgeItem.id !== 'none') titleText += badgeItem.icon + ' ';
+            if (titleItem && titleItem.id !== 'newbie') titleText += titleItem.icon + ' ' + titleItem.name;
+            if (titleText) {
+                previewTitle.textContent = titleText;
+                previewTitle.style.display = 'inline-block';
+                previewTitle.className = 'preview-title' + (effectItem && effectItem.className ? ' ' + effectItem.className : '');
+            } else {
+                previewTitle.style.display = 'none';
             }
         }
-
-        // ==========================================
-        // INITIALIZATION
-        // ==========================================
-
-        // Load economy data on page init
-        document.addEventListener('DOMContentLoaded', async () => {
-            await fetchBalance();
-            await loadAchievements();
-        });
-
-        // Setup event listeners
-        document.addEventListener('DOMContentLoaded', () => {
-            const activityInput = document.getElementById('activityInput');
-            if (activityInput) {
-                activityInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') trackActivity();
-                });
+        if (previewMessage && effectItem && effectItem.className) {
+            previewMessage.className = 'preview-message preview-text-effect ' + effectItem.className;
+            previewMessage.textContent = 'This is how your message looks in chat';
+        } else if (previewMessage) {
+            previewMessage.className = 'preview-message';
+            previewMessage.textContent = 'This is how your message looks in chat';
+        }
+        if (previewAvatar) {
+            if (avatar) previewAvatar.innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            else { previewAvatar.textContent = initials; previewAvatar.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-2))'; }
+        }
+        if (modalPreviewAvatar) {
+            if (avatar) modalPreviewAvatar.innerHTML = `<img src="${avatar}" alt="${name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+            else { modalPreviewAvatar.textContent = initials; modalPreviewAvatar.style.background = 'linear-gradient(135deg, var(--accent), var(--accent-2))'; }
+        }
+        if (modalPreviewUsername) modalPreviewUsername.textContent = name;
+        if (modalPreviewTitle) {
+            let titleText = '';
+            if (badgeItem && badgeItem.id !== 'none') titleText += badgeItem.icon + ' ';
+            if (titleItem && titleItem.id !== 'newbie') titleText += titleItem.icon + ' ' + titleItem.name;
+            if (titleText) {
+                modalPreviewTitle.textContent = titleText;
+                modalPreviewTitle.style.display = 'inline-block';
+                modalPreviewTitle.className = 'preview-title';
+            } else {
+                modalPreviewTitle.style.display = 'none';
             }
+        }
+    }
 
-            const awardAmount = document.getElementById('awardAmount');
-            if (awardAmount) {
-                awardAmount.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') awardMoney();
-                });
+    // ==========================================
+    // EDIT PROFILE MODAL
+    // ==========================================
+    function openEditProfileModal() {
+        if (!currentProfile) return;
+        document.getElementById('avatarUrlInput').value = currentProfile.avatarUrl || '';
+        document.getElementById('displayNameInput').value = currentProfile.displayName || '';
+        document.getElementById('realNameInput').value = currentProfile.realName || '';
+        document.getElementById('bioInput').value = currentProfile.bio || '';
+        document.getElementById('avatarPreview').style.display = 'none';
+        renderTitleSelector();
+        renderEffectSelector();
+        updatePreview();
+        document.getElementById('editProfileModal').style.display = 'flex';
+    }
+
+    function closeEditProfileModal() {
+        document.getElementById('editProfileModal').style.display = 'none';
+    }
+
+    function renderTitleSelector() {
+        const container = document.getElementById('titleSelector');
+        if (!container) return;
+        container.innerHTML = SHOP_TITLES.map(item => {
+            const isOwned = ownedTitles.includes(item.id);
+            const isEquipped = equippedTitle === item.id;
+            const isFree = item.free || item.cost === 0;
+            const isAdminOnly = item.adminOnly && !currentProfile?.isAdmin;
+            return `
+                <div class="selector-item ${isEquipped ? 'equipped' : ''} ${!isOwned && !isFree ? 'locked' : ''}" 
+                     onclick="${isOwned || isFree ? `equipItem('${item.id}', 'title'); renderTitleSelector(); updatePreview();` : ''}"
+                     data-id="${item.id}" data-type="title">
+                    <div class="selector-icon">${item.icon}</div>
+                    <div class="selector-name">${item.name}</div>
+                    <div class="selector-cost ${isFree ? 'free' : ''}">${isFree ? 'FREE' : item.cost.toLocaleString() + ' coins'}</div>
+                    ${isEquipped ? '<div class="selector-equipped-badge"><i class="fas fa-check"></i> Equipped</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderEffectSelector() {
+        const container = document.getElementById('effectSelector');
+        if (!container) return;
+        container.innerHTML = SHOP_EFFECTS.map(item => {
+            const isOwned = ownedEffects.includes(item.id);
+            const isEquipped = equippedEffect === item.id;
+            const isFree = item.free || item.cost === 0;
+            return `
+                <div class="selector-item ${isEquipped ? 'equipped' : ''} ${!isOwned && !isFree ? 'locked' : ''}" 
+                     onclick="${isOwned || isFree ? `equipItem('${item.id}', 'effect'); renderEffectSelector(); updatePreview();` : ''}"
+                     data-id="${item.id}" data-type="effect">
+                    <div class="selector-icon">${item.icon}</div>
+                    <div class="selector-name">${item.name} <span class="${item.className}">${item.className ? 'PREVIEW' : ''}</span></div>
+                    <div class="selector-cost ${isFree ? 'free' : ''}">${isFree ? 'FREE' : item.cost.toLocaleString() + ' coins'}</div>
+                    ${isEquipped ? '<div class="selector-equipped-badge"><i class="fas fa-check"></i> Equipped</div>' : ''}
+                </div>
+            `;
+        }).join('');
+    }
+
+    function testAvatarUrl() {
+        const url = document.getElementById('avatarUrlInput').value;
+        const preview = document.getElementById('avatarPreview');
+        const img = document.getElementById('avatarPreviewImg');
+        if (url) {
+            img.src = url;
+            preview.style.display = 'block';
+            // Also update modal preview avatar
+            const modalPreviewAvatar = document.getElementById('modalPreviewAvatar');
+            if (modalPreviewAvatar) {
+                modalPreviewAvatar.innerHTML = `<img src="${url}" alt="Preview" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
             }
+        } else {
+            preview.style.display = 'none';
+        }
+    }
+
+    async function saveProfile() {
+        const avatarUrl = document.getElementById('avatarUrlInput').value;
+        const displayName = document.getElementById('displayNameInput').value;
+        const realName = document.getElementById('realNameInput').value;
+        const bio = document.getElementById('bioInput').value;
+
+        if (!displayName.trim()) {
+            alert('Display name is required');
+            return;
+        }
+
+        const updatedProfile = {
+            ...currentProfile,
+            avatarUrl: avatarUrl || null,
+            displayName: displayName.trim(),
+            realName: realName.trim(),
+            bio: bio.trim(),
+            equippedTitle,
+            equippedEffect,
+            equippedBadge,
+            ownedTitles,
+            ownedEffects,
+            ownedBadges,
+            updatedAt: new Date().toISOString()
+        };
+
+        saveProfileLocal(updatedProfile);
+        await saveProfileToFirebase(updatedProfile);
+        updateProfileUI();
+        updatePreview();
+        renderShop();
+        closeEditProfileModal();
+        alert('Profile saved successfully!');
+    }
+
+    // ==========================================
+    // PROFILE DROPDOWN
+    // ==========================================
+    function toggleProfileDropdown() {
+        const dropdown = document.getElementById('profileDropdown');
+        const isVisible = dropdown.style.display !== 'none';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('profileDropdown');
+        const profileBtn = document.getElementById('topbarProfile');
+        if (dropdown && profileBtn && !dropdown.contains(e.target) && !profileBtn.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Load profile from localStorage first
+        loadProfileLocal();
+        
+        // Try to load from Firebase
+        const firebaseProfile = await loadProfileFromFirebase();
+        if (firebaseProfile) {
+            applyProfile(firebaseProfile);
+        } else if (currentProfile) {
+            applyProfile(currentProfile);
+        }
+
+        // Load balance and shop
+        await fetchBalance();
+        await loadShopOwnership();
+        await loadAchievements();
+        renderShop();
+        updatePreview();
+
+        // Setup profile dropdown
+        const topbarProfile = document.getElementById('topbarProfile');
+        if (topbarProfile) {
+            topbarProfile.addEventListener('click', toggleProfileDropdown);
+        }
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        if (editProfileBtn) {
+            editProfileBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleProfileDropdown();
+                openEditProfileModal();
+            });
+        }
+        const dropdownLogoutBtn = document.getElementById('dropdownLogoutBtn');
+        if (dropdownLogoutBtn) {
+            dropdownLogoutBtn.addEventListener('click', () => {
+                if (window.auth && window.auth.signOut) {
+                    window.auth.signOut();
+                }
+                localStorage.removeItem(USERNAME_KEY);
+                localStorage.removeItem(PROFILE_KEY);
+                window.location.reload();
+            });
+        }
+
+        // Settings page tab handling
+        const settingsBtn = document.getElementById('settingsBtn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleProfileDropdown();
+                window.location.href = 'settings.html';
+            });
+        }
+
+        // Event listeners for economy inputs
+        const activityInput = document.getElementById('activityInput');
+        if (activityInput) {
+            activityInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') trackActivity();
+            });
+        }
+        const awardAmount = document.getElementById('awardAmount');
+        if (awardAmount) {
+            awardAmount.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') awardMoney();
+            });
+        }
+
+        // Shop tab switching
+        document.querySelectorAll('.shop-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.shop-category').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('shop' + tab.dataset.shopTab.charAt(0).toUpperCase() + tab.dataset.shopTab.slice(1)).classList.add('active');
+            });
         });
+    });
+
+    // Export for chat system
+    window.getEquippedTitle = () => equippedTitle;
+    window.getEquippedEffect = () => equippedEffect;
+    window.getEquippedBadge = () => equippedBadge;
+    window.getProfile = () => currentProfile;
+    window.applyTextEffect = (text, effectId) => {
+        const effect = SHOP_EFFECTS.find(e => e.id === effectId);
+        return effect && effect.className ? `<span class="${effect.className}">${text}</span>` : text;
+    };
     </script>
 </body>
 </html>
