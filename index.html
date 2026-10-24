@@ -1,400 +1,663 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dev Portal - Shop & Achievements</title>
-  <link rel="stylesheet" href="https://assets.hyperionx175.com/storage/RandomFunny/assets/css/Main.css">
-  <link rel="stylesheet" href="https://assets.hyperionx175.com/storage/RandomFunny/assets/css/economy.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
-  <style>
-    .endpoint { background: var(--surface); border: 1px solid var(--border); padding: 10px; margin: 10px 0; border-radius: 8px; }
-    .status { color: var(--accent2); font-weight: bold; }
-    .error { color: var(--danger); font-weight: bold; }
-    #balance { font-size: 24px; font-weight: bold; margin: 10px 0; }
-    .achievement-card { border: 1px solid var(--border); padding: 15px; margin: 10px 0; border-radius: 8px; background: var(--surface); }
-    .card { padding: 15px; margin: 10px 0; border-radius: 8px; background: var(--surface); }
-    input, select, button { font-family: inherit; }
-    .settings-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.8rem; color: var(--text); font-size: 0.9rem; width: 100%; }
-    .settings-btn { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; padding: 0.8rem; border-radius: 8px; cursor: pointer; font-weight: 600; width: 100%; }
-    .settings-btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
-    .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-    .section-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); margin-bottom: 1rem; }
-    .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
-    .form-row .settings-input { flex: 1; min-width: 150px; }
-    .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
-    .btn { padding: 0.6rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; }
-    .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
-    .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
-    .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Portal</title>
+    <link rel="stylesheet" href="https://assets.hyperionx175.com/storage/RandomFunny/assets/css/Main.css">
+    <link rel="stylesheet" href="https://assets.hyperionx175.com/storage/RandomFunny/assets/css/economy.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/Main.js" defer></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/settings.js"></script>
+    <script src="https://assets.hyperionx175.com/storage/RandomFunny/assets/js/live-user-tracker.js"></script>
+    <style>
+        .economy-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .economy-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); margin-bottom: 1rem; }
+        .balance-display { font-size: 2rem; font-weight: 700; color: var(--accent2); margin: 1rem 0; }
+        .achievement-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.5rem 0; }
+        .achievement-card.unlocked { border-color: var(--accent2); }
+        .shop-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.5rem 0; display: flex; justify-content: space-between; align-items: center; }
+        .shop-item:hover { border-color: var(--accent); }
+        .shop-item-info h4 { color: var(--text); margin: 0 0 0.25rem; }
+        .shop-item-info p { color: var(--muted); font-size: 0.85rem; margin: 0; }
+        .shop-item-price { color: var(--accent2); font-weight: 700; font-size: 1.1rem; }
+        .form-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+        .form-row .settings-input { flex: 1; min-width: 150px; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+        .btn { padding: 0.6rem 1rem; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; }
+        .btn-secondary { background: var(--surface2); border: 1px solid var(--border); color: var(--text); }
+        .btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+        .section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .section-header { display: flex; align-items: center; gap: 0.5rem; color: var(--accent); margin-bottom: 1rem; }
+    </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="brand">
-        <div class="logo"><i class="fas fa-cube"></i></div>
-        <div>
-          <h1>Dev Portal</h1>
-          <p>Shop, Achievements & Economy System</p>
+
+    <!-- ═══ MAIN APP ═══ -->
+    <div id="mainApp" style="display:none;">
+
+        <!-- ── Side Menu ── -->
+        <div id="sideMenu" class="side-menu">
+            <div class="side-menu-header">
+                <div class="side-logo">
+                    <i class="fas fa-cube"></i>
+                    <span>Dev Portal</span>
+                </div>
+            </div>
+
+            <div class="side-menu-user">
+                <div id="sideAvatarInitials" class="side-avatar"></div>
+                <div class="side-user-info">
+                    <span id="sideUserName" class="side-username"></span>
+                    <span id="sideUserReal" class="side-realname"></span>
+                </div>
+            </div>
+
+            <nav class="side-nav">
+                <button class="side-nav-btn active" data-section="home" id="navHome">
+                    <i class="fas fa-home"></i><span>Home</span>
+                </button>
+                <button class="side-nav-btn" data-section="library" id="navLibrary">
+                    <i class="fas fa-cube"></i><span>Library</span>
+                </button>
+                <button class="side-nav-btn" data-section="tools" id="navApps">
+                    <i class="fas fa-tools"></i><span>Tools</span>
+                </button>
+                <button class="side-nav-btn" data-section="forum" id="navForum">
+                    <i class="fas fa-comment-dots"></i><span>Feedback</span>
+                </button>
+                <button class="side-nav-btn" data-section="chat" id="navChat">
+                    <i class="fas fa-comments"></i><span>Live Chat</span>
+                    <span id="chatUnreadBadge" class="side-badge" style="display:none;">0</span>
+                </button>
+                <button class="side-nav-btn" data-section="economy" id="navEconomy">
+                    <i class="fas fa-coins"></i><span>Economy</span>
+                </button>
+                <a href="settings.html" class="side-nav-btn side-nav-link">
+                    <i class="fas fa-cog"></i><span>Settings</span>
+                </a>
+            </nav>
+
+            <div class="side-menu-footer">
+                <button id="logoutBtn" class="side-logout-btn">
+                    <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+                </button>
+            </div>
         </div>
-      </div>
-    </header>
 
-    <!-- Balance Display -->
-    <div class="section-card">
-      <div class="section-header"><i class="fas fa-coins"></i><h2>Balance</h2></div>
-      <div style="font-size: 2rem; font-weight: 700; color: var(--accent2);">
-        <i class="fas fa-coins"></i> <span id="balance">Loading...</span> coins
-      </div>
-    </div>
+        <!-- ── Main Content Area ── -->
+        <div id="mainContent" class="main-content">
 
-    <!-- Achievements Section -->
-    <div class="section-card">
-      <div class="section-header"><i class="fas fa-trophy"></i><h2>Achievements</h2></div>
-      <div id="achievements" style="display: none;"></div>
-    </div>
+            <!-- ── Topbar ── -->
+            <div class="topbar">
+                <button id="menuToggleBtn" class="menu-toggle-btn">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 id="pageTitle" class="page-title">Home</h1>
+                <div id="topbarBalance" style="display: none; align-items: center; gap: 0.5rem; color: var(--accent2); font-weight: 600;">
+                    <i class="fas fa-coins"></i> <span id="topbarBalanceValue">0</span>
+                </div>
+            </div>
 
-    <!-- Activity Form -->
-    <div class="section-card">
-      <div class="section-header"><i class="fas fa-chart-line"></i><h2>Track Activity</h2></div>
-      <div class="form-row">
-        <input type="text" id="activityInput" class="settings-input" placeholder="Enter activity (e.g., login, purchase)">
-        <button class="btn btn-primary" onclick="trackActivity()"><i class="fas fa-plus"></i> Track</button>
-      </div>
-    </div>
+            <!-- ── Home Section ── -->
+            <section id="sectionHome" class="content-section active-section">
+                <div class="home-hero">
+                    <div class="home-hero-text">
+                        <h2>Welcome to <span class="purple">Dev Portal</span></h2>
+                        <p>Explore interactive content, suggest additions, and chat with others.</p>
+                    </div>
+                    <div class="home-cards">
+                        <div class="home-card" onclick="switchSection('library')">
+                            <i class="fas fa-cube"></i>
+                            <h3>Library</h3>
+                            <p>Explore interactive content</p>
+                        </div>
+                        <div class="home-card" onclick="switchSection('tools')">
+                            <i class="fas fa-tools"></i>
+                            <h3>Tools</h3>
+                            <p>Useful tools and utilities</p>
+                        </div>
+                        <div class="home-card" onclick="switchSection('forum')">
+                            <i class="fas fa-lightbulb"></i>
+                            <h3>Suggestions</h3>
+                            <p>Vote on what gets added next</p>
+                        </div>
+                        <div class="home-card" onclick="switchSection('chat')">
+                            <i class="fas fa-comments"></i>
+                            <h3>Live Chat</h3>
+                            <p>Talk with online players</p>
+                        </div>
+                        <div class="home-card" onclick="switchSection('economy')">
+                            <i class="fas fa-coins"></i>
+                            <h3>Economy</h3>
+                            <p>Shop, achievements & rewards</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-    <!-- Shop - Award Money -->
-    <div class="section-card">
-      <div class="section-header"><i class="fas fa-gift"></i><h2>Shop - Award Money</h2></div>
-      <div class="form-row">
-        <input type="number" id="awardAmount" class="settings-input" placeholder="Amount (coins)" min="1">
-        <button class="btn btn-primary" onclick="awardMoney()"><i class="fas fa-coins"></i> Award</button>
-      </div>
-    </div>
+            <!-- ── Games Section ── -->
+            <section id="sectionLibrary" class="content-section">
+                <div class="section-toolbar">
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search library..." id="searchInput">
+                    </div>
+                </div>
+                <div class="items-grid" id="itemsGrid">
+                    <button class="item-btn" data-game="baldi-plus" data-type="iframe" data-category="action">
+                        <i class="fas fa-graduation-cap item-icon"></i><span class="item-title">Baldi's Basics Plus</span>
+                    </button>
+                    <button class="item-btn" data-game="baldi-remaster" data-type="iframe" data-category="action">
+                        <i class="fas fa-book item-icon"></i><span class="item-title">Baldi's Basics Classic Remastered</span>
+                    </button>
+                    <button class="item-btn" data-game="getting-over-it" data-type="iframe" data-category="action">
+                        <i class="fas fa-hammer item-icon"></i><span class="item-title">Getting Over It</span>
+                    </button>
+                    <button class="item-btn" data-game="hollow-knight" data-type="iframe" data-category="action">
+                        <i class="fas fa-bug item-icon"></i><span class="item-title">Hollow Knight</span>
+                    </button>
+                    <button class="item-btn" data-game="minesweeperplus" data-type="iframe" data-category="puzzle">
+                        <i class="fas fa-bomb item-icon"></i><span class="item-title">MinesweeperPlus</span>
+                    </button>
+                    <button class="item-btn" data-game="pizza-tower" data-type="iframe" data-category="action">
+                        <i class="fas fa-pizza-slice item-icon"></i><span class="item-title">Pizza Tower</span>
+                    </button>
+                    <button class="item-btn" data-game="schoolboy-runaway" data-type="iframe" data-category="action">
+                        <i class="fas fa-running item-icon"></i><span class="item-title">SchoolBoy Runaway</span>
+                    </button>
+                    <button class="item-btn" data-game="space-invaders" data-type="iframe" data-category="action">
+                        <i class="fas fa-rocket item-icon"></i><span class="item-title">Space Invaders</span>
+                    </button>
+                    <button class="item-btn" data-game="galaga" data-type="iframe" data-category="action">
+                        <i class="fas fa-space-shuttle item-icon"></i><span class="item-title">Galaga</span>
+                    </button>
+                    <button class="item-btn" data-game="asteroids" data-type="iframe" data-category="action">
+                        <i class="fas fa-meteor item-icon"></i><span class="item-title">Asteroids</span>
+                    </button>
+                    <button class="item-btn" data-game="2048" data-type="iframe" data-category="puzzle">
+                        <i class="fas fa-th item-icon"></i><span class="item-title">2048</span>
+                    </button>
+                    <button class="item-btn" data-game="sudoku" data-type="iframe" data-category="puzzle">
+                        <i class="fas fa-hashtag item-icon"></i><span class="item-title">Sudoku</span>
+                    </button>
+                    <button class="item-btn" data-game="minesweeper" data-type="iframe" data-category="puzzle">
+                        <i class="fas fa-bomb item-icon"></i><span class="item-title">Minesweeper</span>
+                    </button>
+                    <button class="item-btn" data-game="cookie-clicker" data-type="iframe" data-category="simulation">
+                        <i class="fas fa-cookie-bite item-icon"></i><span class="item-title">Cookie Clicker</span>
+                    </button>
+                    <button class="item-btn" data-game="retro-bowl" data-type="iframe" data-category="simulation">
+                        <i class="fas fa-football-ball item-icon"></i><span class="item-title">Retro Bowl</span>
+                    </button>
+                    <button class="item-btn" data-game="ovo" data-type="iframe" data-category="action">
+                        <i class="fas fa-egg item-icon"></i><span class="item-title">OVO</span>
+                    </button>
+                    <button class="item-btn" data-game="adofai" data-type="iframe" data-category="action">
+                        <i class="fas fa-fire item-icon"></i><span class="item-title">A Dance of Fire and Ice</span>
+                    </button>
+                </div>
+            </section>
 
-    <!-- MinIO File Browser Section -->
-    <div class="section-card">
-      <div class="section-header"><i class="fas fa-database"></i><h2>MinIO File Storage</h2></div>
-      <div id="minioStatus" class="endpoint" style="display: none;">
-        <strong>MinIO Status: <span id="minioStatusText">Connecting...</span></strong>
-      </div>
-      <div id="minioBuckets" style="display: none;">
-        <label>Buckets:</label>
-        <select id="minioBucketSelect" onchange="listMinioObjects()" class="settings-input">
-          <option value="">Select a bucket</option>
-        </select>
-      </div>
-      <div id="minioObjects" style="display: none; margin-top: 1rem;">
-        <label>Objects:</label>
-        <div class="form-row">
-          <select id="minioObjectSelect" class="settings-input" style="flex: 1;"></select>
-          <button class="btn btn-secondary" onclick="downloadMinioObject()"><i class="fas fa-download"></i> Download</button>
+            <!-- ── Apps Section ── -->
+            <section id="sectionTools" class="content-section">
+                <div class="tools-grid">
+                    <div class="tool-card coming-soon">
+                        <i class="fas fa-calculator"></i>
+                        <h3>Calculator</h3>
+                        <span class="coming-badge">Coming Soon</span>
+                    </div>
+                    <div class="tool-card coming-soon">
+                        <i class="fas fa-music"></i>
+                        <h3>Music Player</h3>
+                        <span class="coming-badge">Coming Soon</span>
+                    </div>
+                    <div class="tool-card coming-soon">
+                        <i class="fas fa-sticky-note"></i>
+                        <h3>Notes</h3>
+                        <span class="coming-badge">Coming Soon</span>
+                    </div>
+                    <div class="tool-card coming-soon">
+                        <i class="fas fa-clock"></i>
+                        <h3>Timer</h3>
+                        <span class="coming-badge">Coming Soon</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Forum Section ── -->
+            <section id="sectionForum" class="content-section">
+                <div class="forum-container" id="suggestionsForum">
+                    <div class="forum-header">
+                        <h2>Feedback</h2>
+                        <p>Submit and vote on content you'd like to see added!</p>
+                        <button id="newSuggestionBtn" class="new-suggestion-btn">
+                            <i class="fas fa-plus"></i> Submit Feedback
+                        </button>
+                    </div>
+                    <div id="suggestionForm" class="suggestion-form" style="display:none;">
+                        <h3>Submit New Feedback</h3>
+                        <div class="form-group">
+                            <label for="gameTitle">Title *</label>
+                            <input type="text" id="gameTitle" placeholder="Enter title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gameDescription">Description *</label>
+                            <textarea id="gameDescription" placeholder="Describe your suggestion..." rows="4" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="gameGenre">Category</label>
+                            <select id="gameGenre">
+                                <option value="">Select genre (optional)</option>
+                                <option value="Action">Action</option>
+                                <option value="Adventure">Adventure</option>
+                                <option value="Puzzle">Puzzle</option>
+                                <option value="Strategy">Strategy</option>
+                                <option value="RPG">RPG</option>
+                                <option value="Sports">Sports</option>
+                                <option value="Racing">Racing</option>
+                                <option value="Simulation">Simulation</option>
+                                <option value="Arcade">Arcade</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="gamePlatform">Platform / Source</label>
+                            <input type="text" id="gamePlatform" placeholder="PC, Console, Mobile, etc. (optional)">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" id="cancelSuggestionBtn" class="cancel-btn">Cancel</button>
+                            <button type="button" id="submitSuggestionBtn" class="submit-btn">Submit Suggestion</button>
+                        </div>
+                    </div>
+                    <div id="suggestionsList" class="suggestions-list"></div>
+                    <div id="forumLoading" class="forum-loading" style="display:none;">
+                        <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i></div>
+                        <p>Loading suggestions...</p>
+                    </div>
+                    <div id="emptySuggestions" class="empty-state" style="display:none;">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>No suggestions yet</h3>
+                        <p>Be the first to suggest a game!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Chat Section (inline) ── -->
+            <section id="sectionChat" class="content-section">
+                <div class="inline-chat-wrap">
+                    <div class="inline-chat-header">
+                        <span><i class="fas fa-comments"></i> Live Chat</span>
+                        <span id="chatOnlineCount" class="chat-online-pill"></span>
+                    </div>
+                    <div id="chatMessages" class="chat-messages"></div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Type a message..." maxlength="300">
+                        <button id="chatSendBtn" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ── Economy Section ── -->
+            <section id="sectionEconomy" class="content-section">
+                <div class="economy-card">
+                    <div class="section-header"><i class="fas fa-coins"></i><h2>Balance</h2></div>
+                    <div class="balance-display">
+                        <i class="fas fa-coins"></i> <span id="balance">Loading...</span> coins
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="fetchBalance()"><i class="fas fa-sync"></i> Refresh Balance</button>
+                    </div>
+                </div>
+
+                <div class="economy-card">
+                    <div class="section-header"><i class="fas fa-store"></i><h2>Shop</h2></div>
+                    <p style="color: var(--muted); margin-bottom: 1rem;">Purchase items with your coins. Items will be unlocked in your account.</p>
+                    <div id="shopItems">
+                        <div class="shop-item">
+                            <div class="shop-item-info">
+                                <h4><i class="fas fa-star"></i> VIP Status</h4>
+                                <p>Unlock exclusive games, priority support, and custom profile badge</p>
+                            </div>
+                            <div>
+                                <span class="shop-item-price">5,000 coins</span>
+                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('vip_status', 5000)"><i class="fas fa-shopping-cart"></i> Buy</button>
+                            </div>
+                        </div>
+                        <div class="shop-item">
+                            <div class="shop-item-info">
+                                <h4><i class="fas fa-palette"></i> Custom Theme</h4>
+                                <p>Create and apply your own color theme across the portal</p>
+                            </div>
+                            <div>
+                                <span class="shop-item-price">2,500 coins</span>
+                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('custom_theme', 2500)"><i class="fas fa-shopping-cart"></i> Buy</button>
+                            </div>
+                        </div>
+                        <div class="shop-item">
+                            <div class="shop-item-info">
+                                <h4><i class="fas fa-bolt"></i> Double Coins Boost (1 hour)</h4>
+                                <p>Earn 2x coins from all activities for 1 hour</p>
+                            </div>
+                            <div>
+                                <span class="shop-item-price">1,000 coins</span>
+                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('double_coins_1h', 1000)"><i class="fas fa-shopping-cart"></i> Buy</button>
+                            </div>
+                        </div>
+                        <div class="shop-item">
+                            <div class="shop-item-info">
+                                <h4><i class="fas fa-crown"></i> Golden Username</h4>
+                                <p>Display your username in gold across the portal and chat</p>
+                            </div>
+                            <div>
+                                <span class="shop-item-price">3,000 coins</span>
+                                <button class="btn btn-primary" style="margin-left: 1rem;" onclick="purchaseItem('golden_username', 3000)"><i class="fas fa-shopping-cart"></i> Buy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="economy-card">
+                    <div class="section-header"><i class="fas fa-trophy"></i><h2>Achievements</h2></div>
+                    <p style="color: var(--muted); margin-bottom: 1rem;">Complete activities to unlock achievements and earn rewards.</p>
+                    <div id="achievements" style="display: none;"></div>
+                </div>
+
+                <div class="economy-card">
+                    <div class="section-header"><i class="fas fa-chart-line"></i><h2>Track Activity</h2></div>
+                    <p style="color: var(--muted); margin-bottom: 1rem;">Manually track activities to earn coins and progress towards achievements.</p>
+                    <div class="form-row">
+                        <input type="text" id="activityInput" class="settings-input" placeholder="Enter activity (e.g., login, purchase, game_play)">
+                        <button class="btn btn-primary" onclick="trackActivity()"><i class="fas fa-plus"></i> Track Activity</button>
+                    </div>
+                </div>
+
+                <div class="economy-card">
+                    <div class="section-header"><i class="fas fa-gift"></i><h2>Admin: Award Coins</h2></div>
+                    <p style="color: var(--muted); margin-bottom: 1rem;">Award coins to yourself or test the economy system.</p>
+                    <div class="form-row">
+                        <input type="number" id="awardAmount" class="settings-input" placeholder="Amount (coins)" min="1" value="100">
+                        <button class="btn btn-primary" onclick="awardMoney()"><i class="fas fa-coins"></i> Award Coins</button>
+                    </div>
+                </div>
+            </section>
+
+        </div><!-- /mainContent -->
+
+    </div><!-- /mainApp -->
+
+    <!-- ═══ FULLSCREEN GAME OVERLAY ═══ -->
+    <div id="gameOverlay" class="game-overlay" style="display:none;">
+        <iframe id="gameFrame" class="game-frame" src="" allowfullscreen></iframe>
+
+        <!-- Collapsed mini-menu trigger (press - key or tap the tab) -->
+        <div id="gameMenuTab" class="game-menu-tab" title="Press - to open menu">
+            <i class="fas fa-minus"></i>
         </div>
-      </div>
-      <div class="btn-group">
-        <button class="btn btn-secondary" onclick="listMinioBuckets()"><i class="fas fa-sync"></i> Refresh Buckets</button>
-      </div>
+
+        <!-- Mini menu panel -->
+        <div id="gameMiniMenu" class="game-mini-menu" style="display:none;">
+            <div class="mini-menu-title" id="miniMenuGameTitle"></div>
+            <div class="mini-menu-btns">
+                <button class="mini-menu-btn" id="miniReturnBtn">
+                    <i class="fas fa-arrow-left"></i> Return to Portal
+                </button>
+                <button class="mini-menu-btn secondary" id="miniChatBtn">
+                    <i class="fas fa-comments"></i> Open Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- In-game floating chat panel -->
+        <div id="gameChat" class="game-chat-panel" style="display:none;">
+            <div class="game-chat-header">
+                <span><i class="fas fa-comments"></i> Live Chat</span>
+                <span id="gameChatOnline" class="chat-online-pill"></span>
+                <button id="gameChatClose" class="game-chat-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="gameChatMessages" class="chat-messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="gameChatInput" class="chat-input" placeholder="Type a message..." maxlength="300">
+                <button id="gameChatSend" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
     </div>
 
-    <!-- Firebase Config Section -->
-    <div class="section-card">
-      <div class="section-header"><i class="fas fa-cog"></i><h2>Firebase Configuration</h2></div>
-      <button class="btn btn-secondary" onclick="fetchFirebaseConfig()"><i class="fas fa-download"></i> Fetch Firebase Config</button>
+    <!-- ═══ LOGIN ═══ -->
+    <div id="loginHub" class="login-hub" style="display:none;">
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Dev Portal</h1>
+                <p>Sign in to continue</p>
+            </div>
+            <div id="loginForm" class="login-form">
+                <div class="form-group">
+                    <input type="text" id="emailInput" placeholder="Username" class="login-input">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="passwordInput" placeholder="Password" class="login-input">
+                </div>
+                <button id="loginBtn" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </button>
+                <div class="login-footer">
+                    <p>Don't have an account? <a href="#" id="signupLink">Sign up</a></p>
+                </div>
+            </div>
+            <div id="signupForm" class="signup-form" style="display:none;">
+                <div class="form-group">
+                    <input type="text" id="signupRealName" placeholder="Real name (e.g. John Smith)" class="login-input">
+                </div>
+                <div class="form-group">
+                    <input type="text" id="signupName" placeholder="Display name / username" class="login-input">
+                </div>
+                <div class="form-group">
+                    <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" class="login-input">
+                </div>
+                <button id="signupBtn" class="login-btn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+                <div class="login-footer">
+                    <p>Already have an account? <a href="#" id="backToLogin">Sign in</a></p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Footer -->
-    <footer style="margin-top: 40px; padding: 20px; border-top: 1px solid var(--border); text-align: center; color: var(--muted);">
-      <p>Dev Portal Integrated with Cloudflare Workers ✅</p>
-      <p>Activity Tracker: <a href="https://activity-tracker.hyperionx175.com" target="_blank" style="color: var(--accent);">Live Worker</a></p>
-      <p>Firebase Config: <a href="https://firebase-config.hyperionx175.com" target="_blank" style="color: var(--accent);">Live Worker</a></p>
-    </footer>
-  </div>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading...</p>
+        </div>
+    </div>
 
-  <!-- JavaScript Integration -->
-  <script>
-    // ==========================================
-    // CONFIGURATION
-    // ==========================================
+    <!-- JavaScript: Economy System -->
+    <script>
+        // ==========================================
+        // ECONOMY CONFIGURATION
+        // ==========================================
 
-    const ACTIVITY_WORKER = 'https://activity-tracker.hyperionx175.com';
-    const FIREBASE_WORKER = 'https://firebase-config.hyperionx175.com';
-    const MINIO_URL = 'https://assets.hyperionx175.com/storage/RandomFunny';
-    const MINIO_ACCESS_KEY = 'admin';
-    const MINIO_SECRET_KEY = 'MySecretGamePass123';
-    const USERNAME = 'lol8'; // Replace with your username system
+        const ACTIVITY_WORKER = 'https://activity-tracker.hyperionx175.com';
+        const FIREBASE_WORKER = 'https://firebase-config.hyperionx175.com';
+        const USERNAME = 'lol8'; // Replace with your username system
 
-    // ==========================================
-    // BALANCE SYSTEM
-    // ==========================================
+        // ==========================================
+        // BALANCE SYSTEM
+        // ==========================================
 
-    async function fetchBalance() {
-      try {
-        const response = await fetch(`${ACTIVITY_WORKER}/user-balance/${USERNAME}`);
-        const data = await response.json();
-        document.getElementById('balance').innerText = data.balance || 0;
-      } catch (error) {
-        document.getElementById('balance').innerText = 'Error';
-        console.error(error);
-      }
-    }
-
-    // ==========================================
-    // ACTIVITY TRACKING
-    // ==========================================
-
-    async function trackActivity() {
-      const activity = document.getElementById('activityInput').value || 'login';
-      try {
-        const response = await fetch(`${ACTIVITY_WORKER}/track-activity`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: USERNAME,
-            activity: activity,
-            details: { page: window.location.pathname, timestamp: new Date().toISOString() }
-          })
-        });
-        const result = await response.json();
-        console.log('Activity tracked:', result);
-        alert('Activity tracked successfully!');
-        document.getElementById('activityInput').value = '';
-        await fetchBalance();
-      } catch (error) {
-        console.error('Error tracking activity:', error);
-        alert('Failed to track activity');
-      }
-    }
-
-    // ==========================================
-    // MONEY/ECONOMY SYSTEM
-    // ==========================================
-
-    async function awardMoney() {
-      const amount = document.getElementById('awardAmount').value;
-      if (!amount || isNaN(amount) || amount <= 0) {
-        alert('Please enter a valid amount');
-        return;
-      }
-
-      try {
-        const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: USERNAME,
-            achievementId: `reward_${amount}`,
-            details: { source: 'site_activity', amount }
-          })
-        });
-        const result = await response.json();
-        alert(`💰 Awarded ${amount} coins! New balance: ${result.balance}`);
-        await fetchBalance();
-      } catch (error) {
-        console.error('Error awarding money:', error);
-        alert('Failed to award money');
-      }
-    }
-
-    // ==========================================
-    // ACHIEVEMENTS SYSTEM
-    // ==========================================
-
-    async function loadAchievements() {
-      try {
-        const response = await fetch(`${ACTIVITY_WORKER}/user-achievements/${USERNAME}`);
-        const data = await response.json();
-
-        const container = document.getElementById('achievements');
-        if (data.achievements.length === 0) {
-          container.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 2rem;">No achievements yet. Complete activities to earn!</p>';
-          container.style.display = 'block';
-          return;
+        async function fetchBalance() {
+            try {
+                const response = await fetch(`${ACTIVITY_WORKER}/user-balance/${USERNAME}`);
+                const data = await response.json();
+                const balance = data.balance || 0;
+                document.getElementById('balance').innerText = balance.toLocaleString();
+                document.getElementById('topbarBalanceValue').innerText = balance.toLocaleString();
+                document.getElementById('topbarBalance').style.display = 'flex';
+                return balance;
+            } catch (error) {
+                document.getElementById('balance').innerText = 'Error';
+                console.error('Error fetching balance:', error);
+                return 0;
+            }
         }
 
-        container.innerHTML = data.achievements.map(ach => `
-          <div class="achievement-card">
-            <h4>${ach.title}</h4>
-            <p>${ach.description}</p>
-            <p><strong>Reward:</strong> ${ach.reward} coins</p>
-            <p><strong>Status:</strong> ${ach.completed ? '✅ Unlocked' : '🔒 Locked'}</p>
-          </div>
-        `).join('');
-        container.style.display = 'block';
-      } catch (error) {
-        console.error('Error loading achievements:', error);
-      }
-    }
+        // ==========================================
+        // ACTIVITY TRACKING
+        // ==========================================
 
-    // Unlock achievement (demo)
-    async function unlockAchievement(achId) {
-      try {
-        const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: USERNAME,
-            achievementId: achId
-          })
-        });
-        const result = await response.json();
-        alert(`🏆 ${result.title || 'Achievement'} unlocked! +${result.reward} coins`);
-        await loadAchievements();
-      } catch (error) {
-        console.error('Error unlocking achievement:', error);
-      }
-    }
-
-    // Check progress toward achievement
-    async function checkProgress(achievementId) {
-      try {
-        const response = await fetch(`${ACTIVITY_WORKER}/check-progress`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: USERNAME,
-            achievementId: achievementId
-          })
-        });
-        const result = await response.json();
-        console.log('Progress:', result);
-        alert(`Progress: ${result.unlocked ? 'Completed!' : `${result.progress}% complete`}`);
-      } catch (error) {
-        console.error('Error checking progress:', error);
-      }
-    }
-
-    // ==========================================
-    // FIREBASE CONFIG
-    // ==========================================
-
-    async function fetchFirebaseConfig() {
-      try {
-        const response = await fetch(`${FIREBASE_WORKER}/firebase-config`);
-        const config = await response.json();
-        console.log('Firebase Config:', config);
-        // Initialize Firebase with config
-        // window.firebase.initializeApp(config);
-        return config;
-      } catch (error) {
-        console.error('Error fetching Firebase config:', error);
-        return null;
-      }
-    }
-
-    // ==========================================
-    // MINIO FILE STORAGE
-    // ==========================================
-
-    function getMinioAuthHeader() {
-      return { 'Authorization': 'Basic ' + btoa(`${MINIO_ACCESS_KEY}:${MINIO_SECRET_KEY}`) };
-    }
-
-    async function listMinioBuckets() {
-      try {
-        const response = await fetch(`${MINIO_URL}/?list-type=2`, {
-          method: 'GET',
-          headers: getMinioAuthHeader()
-        });
-        const data = await response.json();
-        const bucketSelect = document.getElementById('minioBucketSelect');
-        bucketSelect.innerHTML = '<option value="">Select a bucket</option>';
-        if (data.buckets) {
-          data.buckets.forEach(bucket => {
-            const option = document.createElement('option');
-            option.value = bucket.name;
-            option.textContent = bucket.name;
-            bucketSelect.appendChild(option);
-          });
+        async function trackActivity() {
+            const activity = document.getElementById('activityInput').value || 'login';
+            try {
+                const response = await fetch(`${ACTIVITY_WORKER}/track-activity`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: USERNAME,
+                        activity: activity,
+                        details: { page: window.location.pathname, timestamp: new Date().toISOString() }
+                    })
+                });
+                const result = await response.json();
+                console.log('Activity tracked:', result);
+                alert('Activity tracked successfully!');
+                document.getElementById('activityInput').value = '';
+                await fetchBalance();
+                await loadAchievements();
+            } catch (error) {
+                console.error('Error tracking activity:', error);
+                alert('Failed to track activity');
+            }
         }
-        document.getElementById('minioBuckets').style.display = 'block';
-        document.getElementById('minioStatusText').innerText = 'Connected';
-        document.getElementById('minioStatus').style.display = 'block';
-      } catch (error) {
-        console.error('Error listing MinIO buckets:', error);
-        document.getElementById('minioStatusText').innerText = 'Error connecting to MinIO';
-        document.getElementById('minioStatus').style.display = 'block';
-      }
-    }
 
-    async function listMinioObjects() {
-      const bucketSelect = document.getElementById('minioBucketSelect');
-      const selectedBucket = bucketSelect.value;
-      if (!selectedBucket) {
-        alert('Please select a bucket first');
-        return;
-      }
+        // ==========================================
+        // MONEY/ECONOMY SYSTEM
+        // ==========================================
 
-      try {
-        const response = await fetch(`${MINIO_URL}/${selectedBucket}/?list-type=2`, {
-          method: 'GET',
-          headers: getMinioAuthHeader()
-        });
-        const data = await response.json();
-        const objectSelect = document.getElementById('minioObjectSelect');
-        objectSelect.innerHTML = '<option value="">Select an object</option>';
-        if (data.contents) {
-          data.contents.forEach(obj => {
-            const option = document.createElement('option');
-            option.value = obj.key;
-            option.textContent = obj.key;
-            objectSelect.appendChild(option);
-          });
+        async function awardMoney() {
+            const amount = document.getElementById('awardAmount').value;
+            if (!amount || isNaN(amount) || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: USERNAME,
+                        achievementId: `reward_${amount}`,
+                        details: { source: 'site_activity', amount }
+                    })
+                });
+                const result = await response.json();
+                alert(`💰 Awarded ${amount} coins! New balance: ${result.balance}`);
+                await fetchBalance();
+            } catch (error) {
+                console.error('Error awarding money:', error);
+                alert('Failed to award money');
+            }
         }
-        document.getElementById('minioObjects').style.display = 'block';
-      } catch (error) {
-        console.error('Error listing MinIO objects:', error);
-      }
-    }
 
-    async function downloadMinioObject() {
-      const objectSelect = document.getElementById('minioObjectSelect');
-      const selectedKey = objectSelect.value;
-      if (!selectedKey) {
-        alert('Please select an object first');
-        return;
-      }
+        async function purchaseItem(itemId, cost) {
+            // For demo - in real app, this would call a purchase API
+            // We'll use the achievement unlock as a proxy for spending
+            try {
+                const response = await fetch(`${ACTIVITY_WORKER}/unlock-achievement`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: USERNAME,
+                        achievementId: `purchase_${itemId}`,
+                        details: { source: 'shop_purchase', itemId, cost }
+                    })
+                });
+                const result = await response.json();
+                alert(`🛒 Purchased ${itemId} for ${cost} coins! New balance: ${result.balance}`);
+                await fetchBalance();
+            } catch (error) {
+                console.error('Error purchasing item:', error);
+                alert('Failed to purchase item');
+            }
+        }
 
-      const bucketSelect = document.getElementById('minioBucketSelect');
-      const selectedBucket = bucketSelect.value;
+        // ==========================================
+        // ACHIEVEMENTS SYSTEM
+        // ==========================================
 
-      try {
-        const response = await fetch(`${MINIO_URL}/${selectedBucket}/${encodeURIComponent(selectedKey)}`, {
-          method: 'GET',
-          headers: getMinioAuthHeader()
+        async function loadAchievements() {
+            try {
+                const response = await fetch(`${ACTIVITY_WORKER}/user-achievements/${USERNAME}`);
+                const data = await response.json();
+
+                const container = document.getElementById('achievements');
+                if (data.achievements.length === 0) {
+                    container.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 2rem;">No achievements yet. Complete activities to earn!</p>';
+                    container.style.display = 'block';
+                    return;
+                }
+
+                container.innerHTML = data.achievements.map(ach => `
+                    <div class="achievement-card ${ach.completed ? 'unlocked' : ''}">
+                        <h4>${ach.title} ${ach.completed ? '✅' : '🔒'}</h4>
+                        <p>${ach.description}</p>
+                        <p><strong>Reward:</strong> ${ach.reward} coins</p>
+                        <p><strong>Status:</strong> ${ach.completed ? 'Unlocked' : 'Locked'}</p>
+                    </div>
+                `).join('');
+                container.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading achievements:', error);
+            }
+        }
+
+        // ==========================================
+        // FIREBASE CONFIG
+        // ==========================================
+
+        async function fetchFirebaseConfig() {
+            try {
+                const response = await fetch(`${FIREBASE_WORKER}/firebase-config`);
+                const config = await response.json();
+                console.log('Firebase Config:', config);
+                return config;
+            } catch (error) {
+                console.error('Error fetching Firebase config:', error);
+                return null;
+            }
+        }
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+
+        // Load economy data on page init
+        document.addEventListener('DOMContentLoaded', async () => {
+            await fetchBalance();
+            await loadAchievements();
         });
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = selectedKey;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Error downloading MinIO object:', error);
-        alert('Failed to download object');
-      }
-    }
 
-    // ==========================================
-    // INITIALIZATION
-    // ==========================================
+        // Setup event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            const activityInput = document.getElementById('activityInput');
+            if (activityInput) {
+                activityInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') trackActivity();
+                });
+            }
 
-    // Load data on page init
-    await fetchBalance();
-    await loadAchievements();
-    await listMinioBuckets();
-
-    // Setup event listeners
-    document.getElementById('activityInput').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') trackActivity();
-    });
-
-    document.getElementById('awardAmount').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') awardMoney();
-    });
-  </script>
+            const awardAmount = document.getElementById('awardAmount');
+            if (awardAmount) {
+                awardAmount.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') awardMoney();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
